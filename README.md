@@ -1,221 +1,220 @@
 # FlowSpace
 
-FlowSpace is a private company collaboration app aimed at the same day-to-day jobs as Slack, Microsoft Teams, and Zoom: workspace navigation, streams, meetings, calendar, file vault, and project coordination in one cross-platform experience.
+FlowSpace is a private company collaboration platform — Slack, Teams, and Zoom capabilities in one cross-platform experience: workspaces, streams, meetings, file vault, projects, bots, search, and admin tools.
+
+**License**: Proprietary. See [LICENSE](LICENSE). Unauthorized use, distribution, or sublicensing is prohibited.
+
+---
 
 ## Latest Release
 
-Current release: `v2.1.0`
+**v2.1.0** — Windows x64
 
-Download for the team from the organization repo:
+[Download FlowSpace v2.1.0](https://github.com/VYRE-Studios/FlowSpace/releases/download/v2.1.0/FlowSpace-v2.1.0-Windows-x64.zip)
 
-[FlowSpace v2.1.0 for Windows x64](https://github.com/VYRE-Studios/FlowSpace/releases/download/v2.1.0/FlowSpace-v2.1.0-Windows-x64.zip)
+Local-first by default with server-ready connection settings for self-hosted deployments.
 
-This build is local-first by default and includes the new server-ready connection settings.
+---
 
-## Current Direction
+## Features
 
-FlowSpace is staying local-first by default for now, while keeping the app architecture cross-platform and preparing for self-hosted team servers.
+### Core Platform
+- **Workspaces** — Multi-workspace navigation with slug-based URLs and member management
+- **Streams** — Real-time channels with threads, reactions, pins, read receipts, typing indicators
+- **Connect** — LiveKit-powered video meetings with scheduling and participant management
+- **Vault** — File upload, download, and management per workspace with S3/MinIO backend
+- **Calendar** — Meeting scheduling and calendar integration
+- **Projects** — Kanban boards, storyboards, project manifests with template system
+- **Presence** — Online/away/busy/offline status with real-time heartbeat
 
-The local app is intended to run across Windows, macOS, Linux, and eventually iOS from the same Flutter codebase. Windows is the current development and validation machine, but macOS and Linux desktop targets are already present in the repo, and the iOS target remains part of the product direction.
+### Bots & Automation (NEW)
+- **Bot Accounts** — Create bot users per workspace with API key authentication
+- **Slash Commands** — Register `/command` handlers processed in real-time
+- **WebSocket Runtime** — Bots connect via Socket.IO with API key auth
+- **Webhook Handlers** — Optional HTTP webhook dispatch for bot commands
+- **Event Subscriptions** — Bots listen to `message.new`, `user.joined`, `channel.created`, reactions, and mentions
+- **Bot SDK** — TypeScript package (`@flowspace/bot-sdk`) for building custom bots
 
-Local accounts, workspaces, starter channels, and offline session state are stored on the machine so the app can be used without standing up the backend stack. The backend services remain in the repository for self-hosted sync, production auth, and multi-device infrastructure, but local/offline operation is the baseline until the app experience is stable.
+### Administration (NEW)
+- **Member Management** — Invite, remove, and manage workspace members
+- **Role-Based Access** — OWNER, ADMIN, MEMBER roles with granular permissions
+- **Audit Log** — Full audit trail of workspace actions with entity tracking
+- **Storage Dashboard** — Workspace storage usage and file statistics
+- **Bot Management UI** — Create, configure, and monitor bots from workspace settings
+- **API Key Management** — Generate, list, and revoke bot API keys
 
-Default seeded local login:
+### Search (NEW)
+- **Full-Text Search** — Search across messages, files, and projects
+- **Workspace-Scoped** — Results filtered by workspace membership
+- **Multi-Type** — Filter by messages, files, projects, or all
 
-```text
+### Realtime Infrastructure (HARDENED)
+- **JWT-Authenticated WebSocket** — Secure Socket.IO connections with token validation
+- **Exponential Backoff** — Automatic reconnection with 1s→30s backoff
+- **Event Deduplication** — LRU-based dedup cache prevents duplicate events
+- **Redis Pub/Sub** — Horizontally scalable event dispatch across server instances
+
+### Cross-Platform Client
+- **Windows** — Primary target with NSIS installer and portable builds
+- **macOS** — Desktop target with local SQLite support
+- **Linux** — Desktop target for self-hosted deployments
+- **iOS / Android** — Mobile targets for future validation
+
+---
+
+## Server-Ready Mode
+
+Connection modes in `Settings > Connection`:
+
+- **Local** — Offline-first; accounts and data stored in SQLite on-device
+- **Self-hosted Server** — Points at a shared FlowSpace backend
+
+Server mode health check: `GET /api/v1/health`
+
+Default local account:
+
+```
 Email: local@flowspace.app
 Password: flowspace123
 ```
 
-You can also create a local account from the app. When the API is unavailable, registration falls back to the local SQLite store and future logins verify against that local account.
-
-## Server-Ready Mode
-
-Starting in `v2.1.0`, the app has an explicit connection mode in:
-
-```text
-Settings > Connection
-```
-
-Available modes:
-
-- `Local`: default mode; login and registration use this device only.
-- `Self-hosted Server`: points the app at a shared FlowSpace backend.
-
-Server mode stores a base URL such as:
-
-```text
-https://flowspace.yourcompany.com
-```
-
-The `Test` button checks:
-
-```text
-GET /api/v1/health
-```
-
-That health endpoint now exists in the backend. Full hosted workspace/message/file sync is still the next implementation pass, but the client now has the configuration and readiness path needed for the self-hosted server rollout.
-
-## Roadmap To Green
-
-The full system plan is tracked in:
-
-[FlowSpace All Systems Green Plan](docs/FLOWSPACE_ALL_SYSTEMS_GREEN_PLAN.md)
-
-It covers the dashboard status for backend build, Flutter, Android, app boot, auth, workspace, streams, realtime, Connect, Vault, presence, notifications, projects, search, admin, and release readiness.
-
-## Screenshots
-
-### Workspace Home
-
-![FlowSpace workspace home](docs/screenshots/flowspace-workspace-home.png)
-
-### Streams
-
-![FlowSpace streams view](docs/screenshots/flowspace-streams.png)
-
-### Connect
-
-![FlowSpace connect view](docs/screenshots/flowspace-connect.png)
-
-### Calendar
-
-![FlowSpace calendar view](docs/screenshots/flowspace-calendar.png)
-
-### Vault
-
-![FlowSpace vault view](docs/screenshots/flowspace-vault.png)
-
-### Projects
-
-![FlowSpace projects view](docs/screenshots/flowspace-projects.png)
-
-## What Works Locally
-
-- Local account creation and login
-- Local workspace bootstrap
-- Starter streams: `general`, `projects`, and `meetings`
-- Workspace dashboard shell
-- Streams layout and message composer surface
-- Connect/meeting entry surface
-- Calendar view
-- Vault upload surface
-- Projects entry surface
-- Connection mode selector
-- Self-hosted server URL storage
-- Backend health check from Settings
-- Windows desktop build
-- macOS and Linux desktop project targets
-- iOS project target for future mobile validation
+---
 
 ## Tech Stack
 
-Frontend:
+### Frontend
+- Flutter / Dart
+- Windows, macOS, Linux, iOS, Android targets
+- SQLite via `sqflite_common_ffi`
+- Provider pattern state management
+- Secure storage via `flutter_secure_storage`
 
-- Flutter and Dart
-- Windows, macOS, and Linux desktop targets
-- iOS target for the future mobile app
-- Local SQLite cache/store through `sqflite_common_ffi`
-- Secure platform storage through `flutter_secure_storage`
+### Backend
+- NestJS (TypeScript)
+- Prisma ORM + PostgreSQL
+- Redis for pub/sub and Socket.IO scaling
+- Socket.IO for real-time communication
+- LiveKit for video meetings
+- AWS S3 / MinIO for file storage
+- JWT authentication with refresh tokens
 
-Backend, retained for future hosted mode:
+---
 
-- NestJS
-- Prisma
-- PostgreSQL
-- Redis
-- Socket.IO
-- MinIO
-- LiveKit
+## Bot SDK
 
-Backend readiness endpoint:
+Build bots for FlowSpace with the official TypeScript SDK:
 
-```text
-GET /api/v1/health
+```typescript
+import { Bot } from '@flowspace/bot-sdk';
+
+const bot = new Bot({
+  apiKey: 'flo_xxxxxxxxxxxx',
+  workspaceId: 'your-workspace-id',
+  serverUrl: 'https://flowspace.yourcompany.com',
+});
+
+bot.command('/help', async (ctx) => {
+  await ctx.reply('Available commands: /help, /poll, /standup');
+});
+
+bot.on('user.joined', async (user) => {
+  await bot.sendMessage('general', `Welcome ${user.userName}! 🎉`);
+});
+
+await bot.connect();
 ```
 
-## Run Locally
+See [Bot Architecture](docs/BOT_ARCHITECTURE.md) for full API reference and design.
 
-From the Flutter client on the current platform:
-
-```bash
-cd client_flutter
-flutter pub get
-flutter run -d windows   # Windows
-flutter run -d macos     # macOS
-flutter run -d linux     # Linux
-```
-
-To build the current desktop app:
-
-```bash
-cd client_flutter
-flutter build windows --debug   # Windows
-flutter build macos --debug     # macOS, requires Xcode
-flutter build linux --debug     # Linux
-```
-
-The Windows debug executable is created under:
-
-```text
-client_flutter/build/windows/x64/runner/Debug/client_flutter.exe
-```
-
-## Windows Helper Scripts
-
-Windows setup, packaging, installer, service, and verification scripts are kept out of the repo root under:
-
-```text
-scripts/windows/
-```
-
-Run them from the repository root so their existing relative paths continue to resolve correctly:
-
-```powershell
-.\scripts\windows\verify.ps1
-.\scripts\windows\dev-server.ps1
-.\scripts\windows\START_HERE.ps1
-```
-
-## Validation
-
-Useful checks before pushing:
-
-```powershell
-cd client_flutter
-flutter test --no-pub
-flutter analyze --no-fatal-warnings --no-fatal-infos
-flutter build windows --debug --no-pub
-```
-
-The analyzer currently exits successfully with non-fatal warning/info debt. Treat that lint debt as cleanup work, not as a blocker for the local-first pass.
-
-Release validation for `v2.1.0`:
-
-- Backend build/test passed.
-- Flutter tests passed.
-- Flutter analyze passed with existing non-fatal lint debt.
-- Windows release build passed.
+---
 
 ## Repository Layout
 
-```text
+```
 FlowSpace/
-  backend/                  NestJS API and future hosted services
+  backend/                  NestJS API server
+  ├── src/auth/             JWT auth, email verification
+  ├── src/chat/             Channels, messages, threads, reactions, pins
+  ├── src/workspaces/       Workspace CRUD, membership, file-system
+  ├── src/vault/            File upload, download, management
+  ├── src/meet/             LiveKit meeting scheduling
+  ├── src/presence/         Real-time presence heartbeat
+  ├── src/bots/             Bot management, API keys, command routing (NEW)
+  ├── src/admin/            Member management, audit log, storage (NEW)
+  ├── src/search/           Full-text search across entities (NEW)
+  ├── src/signaling/        WebRTC signaling relay
+  ├── src/p2p-gateway/      P2P message gateway
+  ├── src/p2p-runtime/      P2P runtime service
+  ├── src/projects/         Project templates and boards
+  ├── src/updates/          App update system
+  └── prisma/               Database schema and migrations
   client_flutter/           Flutter desktop/mobile app
-  documents/                Archived implementation notes and guides
-  docs/                     Planning docs and screenshots
-  infrastructure/           Service configs for hosted development
-  scripts/windows/          Windows helper scripts and packaging tools
-  service-wrappers/         Windows service helper scripts
+  ├── lib/services/         API clients and backend integrations
+  ├── lib/ui/screens/       App screens (bots, streams, vault, etc.)
+  ├── lib/ui/views/         View components
+  ├── lib/ui/widgets/       Reusable widgets
+  ├── lib/models/           Data models
+  ├── lib/providers/        State management providers
+  ├── lib/sync/             Real-time sync engine
+  └── lib/navigation/       App routing
+  bot-sdk/                  TypeScript Bot SDK package (NEW)
+  docs/                     Architecture plans and screenshots
+  documents/                Implementation notes and deployment guides
+  infrastructure/           Docker and nginx configs
+  scripts/windows/          Windows helper and packaging scripts
 ```
 
-## Near-Term Focus
+---
 
-1. Keep the desktop app usable in offline/local mode.
-2. Fill empty states with real local data flows.
-3. Make Streams, Vault, Calendar, Connect, and Projects useful without backend dependencies.
-4. Keep Windows, macOS, Linux, and iOS targets healthy as features are added.
-5. Wire server mode into hosted workspace/channel/message sync.
-6. Reduce visual/layout issues shown by the current screenshots.
-7. Reintroduce hosted backend sync only after the local app feels coherent and reliable.
+## Run Locally
+
+### Backend
+```bash
+cd backend
+npm install
+npx prisma generate
+npm run start:dev
+```
+
+### Flutter Client
+```bash
+cd client_flutter
+flutter pub get
+flutter run -d windows
+```
+
+---
+
+## Roadmap Status
+
+| System | Status |
+|--------|--------|
+| Backend build | 🟢 Green |
+| Flutter / Dart toolchain | 🟢 Green |
+| Android build | 🟢 Green |
+| App boot | 🟡 Yellow |
+| Auth (JWT + refresh) | 🟡 Yellow |
+| Workspace management | 🟢 Green |
+| Streams (chat, threads, reactions) | 🟢 Green |
+| Realtime (Socket.IO + dedup) | 🟢 Green |
+| Connect (LiveKit meetings) | 🟡 Yellow |
+| Vault (file storage) | 🟡 Yellow |
+| Presence (heartbeat + status) | 🟡 Yellow |
+| Notifications | 🟡 Yellow |
+| Projects (templates + boards) | 🟡 Yellow |
+| Bots & automation | 🟢 Green |
+| Admin (members, roles, audit) | 🟢 Green |
+| Search (full-text) | 🟢 Green |
+| Release workflow | 🟡 Yellow |
+
+Full plan: [All Systems Green Plan](docs/FLOWSPACE_ALL_SYSTEMS_GREEN_PLAN.md)
+
+---
+
+## License
+
+**Proprietary — All Rights Reserved.**
+
+This software is the exclusive property of VyreVault Studios. Use, modification, and distribution are strictly limited. See [LICENSE](LICENSE) for full terms.
+
+Unauthorized use, copying, distribution, or creation of derivative works is prohibited and will be prosecuted.

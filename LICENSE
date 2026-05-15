@@ -1,0 +1,65 @@
+# FlowSpace Proprietary License
+
+Copyright (c) 2025-2026 VyreVault Studios. All rights reserved.
+
+## 1. Definitions
+
+"Software" means the FlowSpace platform, including all source code, object code, documentation, configuration files, build scripts, installer packages, APIs, SDKs, databases schemas, and all other materials contained in this repository.
+
+"Authorized Use" means use explicitly granted in writing by VyreVault Studios through a separate license agreement, subscription, or service contract.
+
+## 2. Grant of License — Internal Use Only
+
+VyreVault Studios ("Licensor") grants the individual or entity who has legally obtained this Software ("Licensee") a limited, non-exclusive, non-transferable, non-sublicensable license to:
+
+a) Install and run the Software on devices owned or controlled by Licensee for internal business purposes only;
+b) Make modifications to the Software solely for Licensee's internal use;
+c) Create derivative works solely for Licensee's internal use.
+
+## 3. Prohibited Uses
+
+Licensee may NOT, without prior written permission from VyreVault Studios:
+
+a) Distribute, sublicense, sell, lease, rent, or otherwise transfer the Software or any portion thereof to any third party;
+b) Use the Software to provide services to third parties (including but not limited to SaaS, PaaS, hosting, or managed service offerings);
+c) Publish, post, or otherwise make the Software available to the public;
+d) Remove, alter, or obscure any copyright, trademark, or proprietary notices;
+e) Reverse engineer, decompile, or disassemble the Software except as expressly permitted by applicable law;
+f) Use the Software in any manner that competes with VyreVault Studios' products or services;
+g) Use the Software for any unlawful purpose or in violation of any applicable laws or regulations.
+
+## 4. Ownership
+
+The Software is licensed, not sold. VyreVault Studios retains all right, title, and interest in and to the Software, including all intellectual property rights. Licensee owns only the physical media on which the Software is recorded. All modifications and derivative works created by Licensee become the property of VyreVault Studios, and Licensee hereby assigns all right, title, and interest in such modifications and derivative works to VyreVault Studios.
+
+## 5. Bot SDK
+
+The FlowSpace Bot SDK (`bot-sdk/`) is provided for building integrations with a properly licensed FlowSpace instance. Use of the Bot SDK does not grant any rights to the FlowSpace platform itself. Bots created with the SDK may only connect to FlowSpace instances for which the bot operator holds a valid license or explicit authorization.
+
+## 6. Termination
+
+This license terminates automatically if Licensee fails to comply with any provision. Upon termination, Licensee must immediately cease all use of the Software and destroy all copies. All provisions regarding ownership, warranty disclaimers, and limitation of liability survive termination.
+
+## 7. Disclaimer of Warranty
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT. VYREVAULT STUDIOS DOES NOT WARRANT THAT THE SOFTWARE WILL MEET LICENSEE'S REQUIREMENTS OR THAT OPERATION WILL BE UNINTERRUPTED OR ERROR-FREE.
+
+## 8. Limitation of Liability
+
+IN NO EVENT SHALL VYREVAULT STUDIOS BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING LOSS OF USE, DATA, BUSINESS, OR PROFITS) ARISING OUT OF OR IN CONNECTION WITH THIS LICENSE OR THE USE OF THE SOFTWARE, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. IN NO EVENT SHALL VYREVAULT STUDIOS' TOTAL LIABILITY EXCEED THE AMOUNT PAID BY LICENSEE FOR THE SOFTWARE.
+
+## 9. Governing Law
+
+This license shall be governed by and construed in accordance with the laws of the State of Texas, United States of America, without regard to conflict of law principles. Any dispute arising under this license shall be resolved exclusively in the state or federal courts located in Harris County, Texas.
+
+## 10. Contact
+
+For commercial licensing, partnership inquiries, or written authorization:
+
+VyreVault Studios
+Email: legal@vyrevault.com
+Website: https://vyrevault.com
+
+---
+
+Unauthorized use, distribution, or reproduction of this Software is strictly prohibited and will be prosecuted to the fullest extent of the law.
