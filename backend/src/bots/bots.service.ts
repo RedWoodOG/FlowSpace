@@ -7,7 +7,7 @@ import {
 import { randomBytes, randomUUID } from 'crypto';
 import { hash, compare } from 'bcrypt';
 import { PrismaService } from '../database/prisma.service';
-import { WorkspaceRole } from '@prisma/client';
+import { WorkspaceRole, BotHandlerType } from '@prisma/client';
 
 @Injectable()
 export class BotsService {
@@ -190,7 +190,7 @@ export class BotsService {
         botId,
         command: data.command,
         description: data.description,
-        handlerType: (data.handlerType as any) || 'WEBSOCKET',
+        handlerType: (data.handlerType as BotHandlerType) || BotHandlerType.WEBSOCKET,
         handlerUrl: data.handlerUrl,
       },
     });
@@ -223,7 +223,10 @@ export class BotsService {
 
     return this.prisma.botCommand.update({
       where: { id: commandId },
-      data,
+      data: {
+        ...data,
+        handlerType: data.handlerType ? (data.handlerType as BotHandlerType) : undefined,
+      },
     });
   }
 

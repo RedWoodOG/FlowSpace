@@ -1,0 +1,39 @@
+{
+  "version": "1.0.0",
+  "templates": [
+    {
+      "id": "kanban",
+      "name": "Kanban Board",
+      "description": "Simple task management with columns: To Do, In Progress, Done",
+      "backgroundModule": "kanban",
+      "tools": ["tasks", "labels", "assignments"],
+      "defaultBoards": ["kanban"],
+      "defaultSettings": {
+        "columns": ["To Do", "In Progress", "Done"]
+      }
+    },
+    {
+      "id": "storyboard",
+      "name": "Storyboard",
+      "description": "Visual storyboard for creative projects",
+      "backgroundModule": "storyboard",
+      "tools": ["scenes", "characters", "notes"],
+      "defaultBoards": ["storyboard"],
+      "defaultSettings": {
+        "layout": "grid"
+      }
+    },
+    {
+      "id": "sprint",
+      "name": "Sprint Planning",
+      "description": "Agile sprint planning with backlog and sprint boards",
+      "backgroundModule": "agile",
+      "tools": ["tasks", "sprints", "velocity"],
+      "defaultBoards": ["backlog", "kanban"],
+      "defaultSettings": {
+        "sprintLength": 14,
+        "columns": ["Backlog", "To Do", "In Progress", "Review", "Done"]
+      }
+    }
+  ]
+}

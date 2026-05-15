@@ -5,6 +5,7 @@ import { BotsService } from './bots.service';
 import { BotsController } from './bots.controller';
 import { BotsGateway } from './bots.gateway';
 import { BotAuthGuard } from './bots-auth.guard';
+import { AuthModule } from '../auth/auth.module';
 import { SharedModule } from '../shared/shared.module';
 import { PrismaModule } from '../database/prisma.module';
 
@@ -13,6 +14,7 @@ import { PrismaModule } from '../database/prisma.module';
   imports: [
     PrismaModule,
     SharedModule,
+    AuthModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
