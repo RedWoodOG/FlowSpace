@@ -1,0 +1,31 @@
+{
+  "templates": [
+    {
+      "id": "kanban",
+      "name": "Kanban Board",
+      "description": "Classic kanban with To Do, In Progress, and Done columns",
+      "backgroundModule": "kanban",
+      "tools": ["tasks", "labels", "assignees"],
+      "defaultBoards": ["To Do", "In Progress", "Done"],
+      "defaultSettings": {}
+    },
+    {
+      "id": "storyboard",
+      "name": "Storyboard",
+      "description": "Visual storyboard for brainstorming and user story mapping",
+      "backgroundModule": "storyboard",
+      "tools": ["cards", "stickers", "annotations"],
+      "defaultBoards": ["Ideas", "User Stories", "Wireframes"],
+      "defaultSettings": {}
+    },
+    {
+      "id": "sprint",
+      "name": "Sprint Board",
+      "description": "Agile sprint board with backlog and sprint planning",
+      "backgroundModule": "sprint",
+      "tools": ["backlog", "sprints", "velocity", "burndown"],
+      "defaultBoards": ["Backlog", "Sprint", "Review"],
+      "defaultSettings": { "sprintLength": 14 }
+    }
+  ]
+}
