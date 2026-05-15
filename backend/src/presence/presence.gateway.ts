@@ -27,7 +27,9 @@ interface PresenceMessage {
 
 @WebSocketGateway({ cors: true, namespace: 'presence' })
 export class PresenceGateway implements OnModuleInit {
-  private static readonly TTL_SECONDS = 60;
+  private static readonly TTL_SECONDS = 30;
+
+  private readonly lastHeartbeat = new Map<string, number>();
 
   @WebSocketServer()
   server!: Server;
@@ -151,6 +153,14 @@ export class PresenceGateway implements OnModuleInit {
     if (!workspaceId || !user) {
       throw new BadRequestException('workspaceId and token are required');
     }
+
+    const key = `${workspaceId}:${user.id}`;
+    const now = Date.now();
+    const last = this.lastHeartbeat.get(key);
+    if (last && now - last < 15000) {
+      return;
+    }
+    this.lastHeartbeat.set(key, now);
 
     await this.setStatus(workspaceId, user.id, data.status ?? 'online', user.displayName);
   }

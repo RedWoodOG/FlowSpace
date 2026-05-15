@@ -34,8 +34,8 @@ model Workspace {
   owner       User              @relation("WorkspaceOwner", fields: [ownerId], references: [id])
   members     WorkspaceMember[]
   channels    Channel[]
-  files       VaultFile[]
   bots        Bot[]
+  files       VaultFile[]
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 }
@@ -74,7 +74,7 @@ model ChatMessage {
   id          String        @id @default(uuid())
   channelId   String
   senderId    String
-  content     String
+  content     String        @db.VarChar(50000)
   attachments String[]      @default([])
   parentId    String?
   reactions   Json?         // [{emoji: string, userId: string, timestamp: string}]
@@ -88,13 +88,14 @@ model ChatMessage {
   createdAt   DateTime      @default(now())
   channel     Channel       @relation(fields: [channelId], references: [id], onDelete: Cascade)
   sender      User          @relation(fields: [senderId], references: [id])
-  parent      ChatMessage?  @relation("MessageThread", fields: [parentId], references: [id], onDelete: Cascade)
+  parent      ChatMessage?  @relation("MessageThread", fields: [parentId], references: [id], onDelete: SetNull)
   replies     ChatMessage[] @relation("MessageThread")
-  botMessages BotMessage[]  @relation("BotMessageThread")
+  botReplies   BotMessage[] @relation("BotMessageThread")
 
   @@index([parentId])
   @@index([channelId, createdAt])
   @@index([channelId, pinned])
+  @@index([channelId, deleted, createdAt])
 }
 
 model VaultFile {
@@ -108,16 +109,6 @@ model VaultFile {
   createdAt   DateTime  @default(now())
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   uploader    User      @relation(fields: [uploaderId], references: [id])
-}
-
-model PresenceSnapshot {
-  id            String   @id @default(uuid())
-  workspaceId   String
-  userId        String
-  status        String
-  lastHeartbeat DateTime @default(now())
-
-  @@unique([workspaceId, userId])
 }
 
 model Meeting {

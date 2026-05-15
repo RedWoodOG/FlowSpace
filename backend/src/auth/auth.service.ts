@@ -62,7 +62,7 @@ export class AuthService {
       displayName: user.displayName,
     };
 
-    const token = sign(payload, this.jwtSecret, { expiresIn: this.tokenTtl });
+    const token = sign(payload, this.jwtSecret, { expiresIn: this.tokenTtl, algorithm: 'HS256' as const });
     return { token };
   }
 
@@ -100,8 +100,7 @@ export class AuthService {
       throw new BadRequestException('Password must be at least 8 characters long');
     }
 
-    // Hash the password (using 8 rounds for better performance on production server)
-    const passwordHash = await hash(password, 8);
+    const passwordHash = await hash(password, 12);
 
     // Create the user in Prisma
     const newUser = await this.prisma.user.create({
@@ -138,7 +137,7 @@ export class AuthService {
 
   verifyToken(token: string): AuthTokenPayload {
     try {
-      const decoded = verify(token, this.jwtSecret);
+      const decoded = verify(token, this.jwtSecret, { algorithms: ['HS256'] });
       if (typeof decoded === 'string') {
         throw new UnauthorizedException('Invalid token');
       }
@@ -158,10 +157,10 @@ export class AuthService {
     message: string;
     userId: string;
   }> {
-    // Check if user already exists
+    // Check if user already exists — return uniform message to prevent email enumeration
     const existingUser = await this.prisma.user.findUnique({ where: { email } });
     if (existingUser) {
-      throw new ConflictException('User with this email already exists');
+      return { message: 'If this email is eligible, a verification message will be sent.', userId: 'pending' };
     }
 
     // Validate email format
@@ -175,7 +174,7 @@ export class AuthService {
       throw new BadRequestException('Password must be at least 8 characters long');
     }
 
-    const passwordHash = await hash(password, 8);
+    const passwordHash = await hash(password, 12);
 
     const newUser = await this.prisma.user.create({
       data: {

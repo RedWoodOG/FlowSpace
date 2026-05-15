@@ -19,6 +19,7 @@ import {
 } from '../../libs/shared';
 import { ChatService } from './chat.service';
 import { BotsService } from '../bots/bots.service';
+import * as https from 'https';
 
 @WebSocketGateway({ cors: true })
 export class ChatGateway implements OnModuleInit {
@@ -53,9 +54,7 @@ export class ChatGateway implements OnModuleInit {
               ...data.message,
               soundUrl: '/assets/sounds/notification.wav',
             });
-            this.server
-              .to(`workspace:${data.workspaceId}`)
-              .emit('workspace.activity', { type: 'message', message: data.message });
+            // workspace.activity event removed — too expensive at scale. Use per-channel events.
             break;
           }
           case WorkspaceEvents.CHANNEL_CREATED: {
@@ -91,20 +90,9 @@ export class ChatGateway implements OnModuleInit {
   }
 
   async handleConnection(client: Socket) {
-    // TEMPORARY: Allow connections without JWT token for testing
-    try {
-      const payload = await this.extractUser(client);
-      client.data.user = payload;
-      console.log(`[ChatGateway] Client connected with JWT: ${payload.email}`);
-    } catch (error) {
-      // Allow connection without JWT for testing
-      console.log(`[ChatGateway] Client connected without valid JWT (testing mode)`);
-      client.data.user = {
-        id: 'anonymous',
-        email: 'test@flowspace.local',
-        displayName: 'Test User',
-      };
-    }
+    const payload = await this.extractUser(client);
+    client.data.user = payload;
+    console.log(`[ChatGateway] Client connected with JWT: ${payload.email}`);
 
     const workspaceId = client.handshake.query.workspaceId as string | undefined;
     const channelId = client.handshake.query.channelId as string | undefined;
@@ -166,6 +154,15 @@ export class ChatGateway implements OnModuleInit {
       return;
     }
 
+    // Message content length limit
+    if (data.content.length > 50000) {
+      client.emit('message.failed', {
+        tempId: data.tempId,
+        error: 'Message exceeds maximum length of 50,000 characters',
+      });
+      return;
+    }
+
     // ---- BOT COMMAND ROUTING ----
     if (data.content.startsWith('/')) {
       const commandEntry = await this.botsService.findCommandInWorkspace(workspaceId, data.content);
@@ -183,7 +180,6 @@ export class ChatGateway implements OnModuleInit {
 
         if (commandEntry.handlerType === 'WEBSOCKET') {
           // Dispatch to connected bot via BotsGateway
-          const { BotsGateway } = require('../bots/bots.gateway');
           // The gateway instance is managed by NestJS - we publish via Redis for decoupling
           await this.redis.publish('command.invoked', {
             workspaceId,
@@ -199,8 +195,6 @@ export class ChatGateway implements OnModuleInit {
         } else if (commandEntry.handlerType === 'WEBHOOK' && commandEntry.handlerUrl) {
           // Fire-and-forget webhook call
           try {
-            const https = require('https');
-            const { URL } = require('url');
             const webhookUrl = new URL(commandEntry.handlerUrl);
             const postData = JSON.stringify(commandPayload);
             const req = https.request({
@@ -213,6 +207,8 @@ export class ChatGateway implements OnModuleInit {
                 'Content-Length': Buffer.byteLength(postData),
               },
             });
+            req.setTimeout(10000, () => { req.destroy(); });
+            req.on('error', (e) => { console.error('Webhook error:', e); });
             req.write(postData);
             req.end();
           } catch (webhookError) {
@@ -266,8 +262,17 @@ export class ChatGateway implements OnModuleInit {
       content: string;
     },
   ) {
-    // Will be implemented in future steps
-    console.log('[ChatGateway] Message edit requested:', data.messageId);
+    const user = client.data.user as { id: string } | undefined;
+    if (!user) return;
+
+    try {
+      const result = await this.chatService.editMessage(data.messageId, user.id, data.content);
+      client.emit('message.edited', result);
+    } catch (error) {
+      client.emit('message.failed', {
+        error: error instanceof Error ? error.message : 'Failed to edit message',
+      });
+    }
   }
 
   @SubscribeMessage('message.delete')
@@ -277,8 +282,17 @@ export class ChatGateway implements OnModuleInit {
       messageId: string;
     },
   ) {
-    // Will be implemented in future steps
-    console.log('[ChatGateway] Message delete requested:', data.messageId);
+    const user = client.data.user as { id: string } | undefined;
+    if (!user) return;
+
+    try {
+      await this.chatService.deleteMessage(data.messageId, user.id);
+      client.emit('message.deleted', { messageId: data.messageId });
+    } catch (error) {
+      client.emit('message.failed', {
+        error: error instanceof Error ? error.message : 'Failed to delete message',
+      });
+    }
   }
 
   @SubscribeMessage('message.read')
@@ -325,6 +339,11 @@ export class ChatGateway implements OnModuleInit {
     const user = client.data.user as { id: string; displayName: string } | undefined;
     if (!user) return;
 
+    if (data.emoji.length > 32) {
+      client.emit('reaction.added', { error: 'Emoji exceeds maximum length of 32 characters' });
+      return;
+    }
+
     const event = {
       messageId: data.messageId,
       channelId: data.channelId,
@@ -350,6 +369,11 @@ export class ChatGateway implements OnModuleInit {
   ) {
     const user = client.data.user as { id: string; displayName: string } | undefined;
     if (!user) return;
+
+    if (data.emoji.length > 32) {
+      client.emit('reaction.removed', { error: 'Emoji exceeds maximum length of 32 characters' });
+      return;
+    }
 
     const event = {
       messageId: data.messageId,
@@ -429,9 +453,15 @@ export class ChatGateway implements OnModuleInit {
     const user = client.data.user as { id: string; displayName: string } | undefined;
     if (!user) return;
 
+    const workspaceId = client.handshake.query.workspaceId as string | undefined;
+    if (!workspaceId || workspaceId !== data.workspaceId) {
+      client.emit('bulletin.created', { error: 'Workspace mismatch' });
+      return;
+    }
+
     const bulletin = {
       id: `bulletin_${Date.now()}`,
-      workspaceId: data.workspaceId,
+      workspaceId,
       title: data.title,
       content: data.content,
       authorId: user.id,
@@ -448,13 +478,13 @@ export class ChatGateway implements OnModuleInit {
 
     const event = {
       bulletinId: bulletin.id,
-      workspaceId: data.workspaceId,
+      workspaceId,
       action: 'created',
       bulletin,
       timestamp: new Date().toISOString(),
     };
 
-    this.server.to(`workspace:${data.workspaceId}`).emit('bulletin.created', event);
+    this.server.to(`workspace:${workspaceId}`).emit('bulletin.created', event);
     console.log(`[ChatGateway] Bulletin created: ${bulletin.id}`);
   }
 
@@ -463,18 +493,28 @@ export class ChatGateway implements OnModuleInit {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: any,
   ) {
+    const user = client.data.user as { id: string; displayName: string } | undefined;
+    if (!user) return;
+
+    const workspaceId = client.handshake.query.workspaceId as string | undefined;
+    if (!workspaceId || workspaceId !== data.workspaceId) {
+      client.emit('bulletin.updated', { error: 'Workspace mismatch' });
+      return;
+    }
+
     const event = {
       bulletinId: data.id,
-      workspaceId: data.workspaceId,
+      workspaceId,
       action: 'updated',
       bulletin: {
         ...data,
+        workspaceId,
         updatedAt: new Date().toISOString(),
       },
       timestamp: new Date().toISOString(),
     };
 
-    this.server.to(`workspace:${data.workspaceId}`).emit('bulletin.updated', event);
+    this.server.to(`workspace:${workspaceId}`).emit('bulletin.updated', event);
     console.log(`[ChatGateway] Bulletin updated: ${data.id}`);
   }
 
@@ -486,14 +526,23 @@ export class ChatGateway implements OnModuleInit {
       bulletinId: string;
     },
   ) {
+    const user = client.data.user as { id: string } | undefined;
+    if (!user) return;
+
+    const workspaceId = client.handshake.query.workspaceId as string | undefined;
+    if (!workspaceId || workspaceId !== data.workspaceId) {
+      client.emit('bulletin.deleted', { error: 'Workspace mismatch' });
+      return;
+    }
+
     const event = {
       bulletinId: data.bulletinId,
-      workspaceId: data.workspaceId,
+      workspaceId,
       action: 'deleted',
       timestamp: new Date().toISOString(),
     };
 
-    this.server.to(`workspace:${data.workspaceId}`).emit('bulletin.deleted', event);
+    this.server.to(`workspace:${workspaceId}`).emit('bulletin.deleted', event);
     console.log(`[ChatGateway] Bulletin deleted: ${data.bulletinId}`);
   }
 
@@ -505,15 +554,24 @@ export class ChatGateway implements OnModuleInit {
       bulletinId: string;
     },
   ) {
+    const user = client.data.user as { id: string } | undefined;
+    if (!user) return;
+
+    const workspaceId = client.handshake.query.workspaceId as string | undefined;
+    if (!workspaceId || workspaceId !== data.workspaceId) {
+      client.emit('bulletin.pinned', { error: 'Workspace mismatch' });
+      return;
+    }
+
     const event = {
       bulletinId: data.bulletinId,
-      workspaceId: data.workspaceId,
+      workspaceId,
       action: 'pinned',
       bulletin: null,
       timestamp: new Date().toISOString(),
     };
 
-    this.server.to(`workspace:${data.workspaceId}`).emit('bulletin.pinned', event);
+    this.server.to(`workspace:${workspaceId}`).emit('bulletin.pinned', event);
     console.log(`[ChatGateway] Bulletin pinned: ${data.bulletinId}`);
   }
 
@@ -525,15 +583,24 @@ export class ChatGateway implements OnModuleInit {
       bulletinId: string;
     },
   ) {
+    const user = client.data.user as { id: string } | undefined;
+    if (!user) return;
+
+    const workspaceId = client.handshake.query.workspaceId as string | undefined;
+    if (!workspaceId || workspaceId !== data.workspaceId) {
+      client.emit('bulletin.unpinned', { error: 'Workspace mismatch' });
+      return;
+    }
+
     const event = {
       bulletinId: data.bulletinId,
-      workspaceId: data.workspaceId,
+      workspaceId,
       action: 'unpinned',
       bulletin: null,
       timestamp: new Date().toISOString(),
     };
 
-    this.server.to(`workspace:${data.workspaceId}`).emit('bulletin.unpinned', event);
+    this.server.to(`workspace:${workspaceId}`).emit('bulletin.unpinned', event);
     console.log(`[ChatGateway] Bulletin unpinned: ${data.bulletinId}`);
   }
 

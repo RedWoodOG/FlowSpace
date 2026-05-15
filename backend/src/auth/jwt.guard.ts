@@ -15,7 +15,7 @@ export class JwtAuthGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     if (context.getType() !== 'http') {
-      return true;
+      throw new UnauthorizedException('JWT guard only supports HTTP contexts');
     }
 
     const request = context.switchToHttp().getRequest<Request & { user?: AuthTokenPayload }>();

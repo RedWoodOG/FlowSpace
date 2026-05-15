@@ -7,23 +7,37 @@ import {
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
-import { Logger } from '@nestjs/common';
+import { Logger, OnModuleInit } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { BotsService } from './bots.service';
 import { RedisService } from '../shared/redis.service';
+import { WorkspaceEvents } from '../../libs/shared';
 
 @WebSocketGateway({ cors: true })
-export class BotsGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class BotsGateway implements OnGatewayConnection, OnGatewayDisconnect, OnModuleInit {
   @WebSocketServer()
   server!: Server;
 
   private readonly logger = new Logger(BotsGateway.name);
   private readonly connectedBots = new Map<string, { botId: string; workspaceId: string; socket: Socket }>();
 
+  private readonly botRateLimit = new Map<string, { count: number; resetAt: number }>();
+  private readonly RATE_LIMIT_WINDOW = 1000;
+  private readonly RATE_LIMIT_MAX = 10;
+
   constructor(
     private readonly botsService: BotsService,
     private readonly redis: RedisService,
   ) {}
+
+  async onModuleInit() {
+    await this.redis.subscribe(['command.invoked'], (channel: string, payload: string) => {
+      if (channel === 'command.invoked') {
+        const data = JSON.parse(payload);
+        this.dispatchCommandToBot(data.workspaceId, data.botId, 'command.invoked', data);
+      }
+    });
+  }
 
   async handleConnection(client: Socket) {
     const apiKey = client.handshake.auth?.token as string | undefined;
@@ -40,11 +54,10 @@ export class BotsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
-    const bot = await this.botsService.getBot(
+    const bot = await this.botsService.getBotForConnection(
       botContext.workspaceId,
       botContext.botId,
-      'system', // bypass membership check for bot itself
-    ).catch(() => null);
+    );
 
     if (!bot) {
       this.logger.warn(`Bot connection rejected: bot not found`);
@@ -97,17 +110,28 @@ export class BotsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const bot = client.data.bot;
     if (!bot) return;
 
+    // Per-bot rate limiting: sliding window, 10 messages/second
+    const now = Date.now();
+    const rl = this.botRateLimit.get(bot.botId);
+    if (rl && now < rl.resetAt) {
+      if (rl.count >= this.RATE_LIMIT_MAX) {
+        client.emit('message.failed', { error: 'Rate limit exceeded' });
+        return;
+      }
+      rl.count++;
+    } else {
+      this.botRateLimit.set(bot.botId, { count: 1, resetAt: now + this.RATE_LIMIT_WINDOW });
+    }
+
     try {
-      // Persist bot message
-      const message = await this.botsService['prisma'].botMessage.create({
-        data: {
-          botId: bot.botId,
-          channelId: data.channelId,
-          content: data.content,
-          attachments: data.attachments || [],
-          parentId: data.threadId || null,
-        },
-      });
+      // Persist bot message via service (includes channel-to-workspace validation)
+      const message = await this.botsService.persistBotMessage(
+        bot.botId,
+        data.channelId,
+        data.content,
+        data.attachments,
+        data.threadId,
+      );
 
       // Publish to workspace for all clients
       const payload = {
@@ -123,7 +147,7 @@ export class BotsGateway implements OnGatewayConnection, OnGatewayDisconnect {
         botId: bot.botId,
       };
 
-      await this.redis.publish('message.sent', {
+      await this.redis.publish(WorkspaceEvents.MESSAGE_SENT, {
         workspaceId: bot.workspaceId,
         message: payload,
       });

@@ -7,6 +7,11 @@ export interface BotOptions {
   serverUrl: string;
 }
 
+export interface BotConnectedPayload { botId: string; workspaceId: string; }
+export interface BotErrorPayload { message: string; }
+export interface BotMessagePayload { id: string; channelId: string; senderId: string; senderName: string; content: string; attachments?: string[]; parentId?: string; timestamp: string; isBot?: boolean; botId?: string; }
+
+
 type CommandHandler = (ctx: CommandContext) => void | Promise<void>;
 type EventHandler = (data: any) => void | Promise<void>;
 
@@ -23,9 +28,23 @@ export class Bot {
   private connectPromise: Promise<void> | null = null;
 
   constructor(options: BotOptions) {
+    if (!options.apiKey || typeof options.apiKey !== 'string' || !options.apiKey.startsWith('flo_')) {
+      throw new Error('Invalid apiKey: must be a non-empty string starting with "flo_"');
+    }
+    if (!options.workspaceId || typeof options.workspaceId !== 'string') {
+      throw new Error('Invalid workspaceId: must be a non-empty string');
+    }
+    if (!options.serverUrl || typeof options.serverUrl !== 'string') {
+      throw new Error('Invalid serverUrl: must be a non-empty string');
+    }
     this.apiKey = options.apiKey;
     this.workspaceId = options.workspaceId;
     this.serverUrl = options.serverUrl;
+  }
+
+
+  get isConnected(): boolean {
+    return this.socket?.connected ?? false;
   }
 
   // ---------------------------------------------------------------------------
@@ -59,6 +78,7 @@ export class Bot {
       });
 
       this.socket.once('error', (err: { message: string }) => {
+        this.connectPromise = null;
         reject(new Error(err.message ?? 'Bot connection rejected'));
       });
 
@@ -70,12 +90,12 @@ export class Bot {
           try {
             const result = handler(ctx);
             if (result instanceof Promise) {
-              result.catch(() => {
-                // Swallow — handler errors should not crash the SDK
+              result.catch((err) => {
+                this._emitError('command_error', err, payload);
               });
             }
-          } catch {
-            // Swallow
+          } catch (err) {
+            this._emitError('command_error', err, payload);
           }
         }
       });
@@ -144,7 +164,7 @@ export class Bot {
    * publishes it to the workspace, and replies with `message.confirmed` or
    * `message.failed`.
    */
-  sendMessage(channelId: string, content: string, attachments?: string[]): Promise<void> {
+  sendMessage(channelId: string, content: string, attachments?: string[], timeoutMs = 15000): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       if (!this.socket?.connected) {
         reject(new Error('Bot is not connected'));
@@ -152,26 +172,33 @@ export class Bot {
       }
 
       const payload: Record<string, unknown> = { channelId, content };
-      if (attachments?.length) {
-        payload.attachments = attachments;
-      }
+      if (attachments?.length) payload.attachments = attachments;
 
-      this.socket.emit('message.send', payload);
+      let timedOut = false;
+      const timer = setTimeout(() => {
+        timedOut = true;
+        cleanup();
+        reject(new Error(`sendMessage timed out after ${timeoutMs}ms`));
+      }, timeoutMs);
 
       const onConfirmed = (_data: { messageId: string }) => {
+        if (timedOut) return;
         cleanup();
         resolve();
       };
       const onFailed = (data: { error: string }) => {
+        if (timedOut) return;
         cleanup();
         reject(new Error(data.error ?? 'Failed to send message'));
       };
 
       const cleanup = () => {
+        clearTimeout(timer);
         this.socket?.off('message.confirmed', onConfirmed);
         this.socket?.off('message.failed', onFailed);
       };
 
+      this.socket.emit('message.send', payload);
       this.socket.once('message.confirmed', onConfirmed);
       this.socket.once('message.failed', onFailed);
     });
@@ -193,6 +220,15 @@ export class Bot {
   // ---------------------------------------------------------------------------
   // Internal
   // ---------------------------------------------------------------------------
+
+  private _emitError(type: string, err: unknown, context?: unknown): void {
+    const handlers = this.eventHandlers.get('error');
+    if (handlers) {
+      for (const h of handlers) {
+        try { h({ type, error: err, context }); } catch {}
+      }
+    }
+  }
 
   /**
    * Attach all queued event handlers to the current socket.

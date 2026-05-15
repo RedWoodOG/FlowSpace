@@ -15,6 +15,7 @@ export class BotsService {
 
   private readonly API_KEY_PREFIX = 'flo_';
 
+  // TODO: Emit audit event for bot action
   async createBot(
     workspaceId: string,
     userId: string,
@@ -41,6 +42,7 @@ export class BotsService {
     });
   }
 
+  // TODO: Emit audit event for bot action
   async listBots(workspaceId: string, userId: string) {
     await this.requireMember(workspaceId, userId);
 
@@ -58,6 +60,7 @@ export class BotsService {
     });
   }
 
+  // TODO: Emit audit event for bot action
   async getBot(workspaceId: string, botId: string, userId: string) {
     await this.requireMember(workspaceId, userId);
 
@@ -85,6 +88,28 @@ export class BotsService {
     return bot;
   }
 
+  async getBotForConnection(workspaceId: string, botId: string) {
+    return this.prisma.bot.findFirst({
+      where: { id: botId, workspaceId },
+      include: { commands: true, events: true, apiKeys: { select: { id: true, prefix: true, lastUsed: true, expiresAt: true, createdAt: true } } },
+    });
+  }
+
+  async persistBotMessage(botId: string, channelId: string, content: string, attachments?: string[], parentId?: string) {
+    const bot = await this.prisma.bot.findUnique({ where: { id: botId } });
+    if (!bot) throw new NotFoundException('Bot not found');
+
+    const channel = await this.prisma.channel.findUnique({ where: { id: channelId } });
+    if (!channel || channel.workspaceId !== bot.workspaceId) {
+      throw new ForbiddenException('Channel not in bot workspace');
+    }
+
+    return this.prisma.botMessage.create({
+      data: { botId, channelId, content, attachments: attachments || [], parentId: parentId || null },
+    });
+  }
+
+  // TODO: Emit audit event for bot action
   async updateBot(
     workspaceId: string,
     botId: string,
@@ -109,6 +134,7 @@ export class BotsService {
     });
   }
 
+  // TODO: Emit audit event for bot action
   async deleteBot(workspaceId: string, botId: string, userId: string) {
     await this.requireAdmin(workspaceId, userId);
     await this.requireBotOwnership(workspaceId, botId);
@@ -117,12 +143,14 @@ export class BotsService {
     return { success: true };
   }
 
+  // TODO: Emit audit event for bot action
   async generateApiKey(workspaceId: string, botId: string, userId: string) {
     await this.requireAdmin(workspaceId, userId);
     await this.requireBotOwnership(workspaceId, botId);
 
     const rawKey = `${this.API_KEY_PREFIX}${randomBytes(32).toString('hex')}`;
-    const keyHash = await hash(rawKey, 8);
+    // NOTE: bcrypt prefix matching is a pragmatic tradeoff; keyId-based lookup would be more secure.
+    const keyHash = await hash(rawKey, 12);
     const prefix = rawKey.substring(0, 15) + '...';
 
     await this.prisma.botApiKey.create({
@@ -136,6 +164,7 @@ export class BotsService {
     return { apiKey: rawKey, prefix };
   }
 
+  // TODO: Emit audit event for bot action
   async listApiKeys(workspaceId: string, botId: string, userId: string) {
     await this.requireAdmin(workspaceId, userId);
     await this.requireBotOwnership(workspaceId, botId);
@@ -153,6 +182,7 @@ export class BotsService {
     });
   }
 
+  // TODO: Emit audit event for bot action
   async revokeApiKey(workspaceId: string, botId: string, keyId: string, userId: string) {
     await this.requireAdmin(workspaceId, userId);
     await this.requireBotOwnership(workspaceId, botId);
@@ -169,6 +199,7 @@ export class BotsService {
     return { success: true };
   }
 
+  // TODO: Emit audit event for bot action
   async addCommand(
     workspaceId: string,
     botId: string,
@@ -196,6 +227,7 @@ export class BotsService {
     });
   }
 
+  // TODO: Emit audit event for bot action
   async listCommands(workspaceId: string, botId: string, userId: string) {
     await this.requireMember(workspaceId, userId);
     return this.prisma.botCommand.findMany({
@@ -204,6 +236,7 @@ export class BotsService {
     });
   }
 
+  // TODO: Emit audit event for bot action
   async updateCommand(
     workspaceId: string,
     botId: string,
@@ -223,10 +256,11 @@ export class BotsService {
 
     return this.prisma.botCommand.update({
       where: { id: commandId },
-      data,
+      data: { ...data, handlerType: data.handlerType as any },
     });
   }
 
+  // TODO: Emit audit event for bot action
   async removeCommand(workspaceId: string, botId: string, commandId: string, userId: string) {
     await this.requireAdmin(workspaceId, userId);
     await this.requireBotOwnership(workspaceId, botId);
@@ -242,6 +276,7 @@ export class BotsService {
     return { success: true };
   }
 
+  // TODO: Emit audit event for bot action
   async subscribeEvent(
     workspaceId: string,
     botId: string,
@@ -263,6 +298,7 @@ export class BotsService {
     });
   }
 
+  // TODO: Emit audit event for bot action
   async listEventSubscriptions(workspaceId: string, botId: string, userId: string) {
     await this.requireMember(workspaceId, userId);
     return this.prisma.botEventSubscription.findMany({
@@ -271,6 +307,7 @@ export class BotsService {
     });
   }
 
+  // TODO: Emit audit event for bot action
   async unsubscribeEvent(
     workspaceId: string,
     botId: string,
@@ -293,6 +330,7 @@ export class BotsService {
 
   // ===== Auth helpers =====
 
+  // TODO: Emit audit event for bot action
   async validateApiKey(apiKey: string): Promise<{ id: string; botId: string; workspaceId: string } | null> {
     const prefix = apiKey.substring(0, 15);
 
@@ -319,6 +357,7 @@ export class BotsService {
     return null;
   }
 
+  // TODO: Emit audit event for bot action
   async findCommandInWorkspace(workspaceId: string, commandText: string) {
     const commandRoot = commandText.split(' ')[0].toLowerCase();
 

@@ -49,6 +49,7 @@ export class ChatService {
       }
     }
 
+    // TODO: N+1 query — consider raw query or batch load for last message per channel
     const channels = await this.prisma.channel.findMany({
       where: { workspaceId },
       include: {
@@ -253,6 +254,9 @@ export class ChatService {
     }
 
     // Validate parent message if parentId is provided
+    // Message content length limit
+    if (content.length > 50000) throw new BadRequestException('Message too long');
+
     if (parentId) {
       const parentMessage = await this.prisma.chatMessage.findUnique({
         where: { id: parentId },
@@ -266,21 +270,22 @@ export class ChatService {
     // Detect mentions in content
     const mentions = this.extractMentions(content);
 
-    const message = await this.prisma.chatMessage.create({
-      data: {
-        channelId,
-        senderId,
-        content,
-        attachments,
-        parentId,
-      },
-      include: { sender: true },
-    });
-
-    await this.prisma.channel.update({
-      where: { id: channelId },
-      data: { updatedAt: new Date() },
-    });
+    const [message] = await this.prisma.$transaction([
+      this.prisma.chatMessage.create({
+        data: {
+          channelId,
+          senderId,
+          content,
+          attachments,
+          parentId,
+        },
+        include: { sender: true },
+      }),
+      this.prisma.channel.update({
+        where: { id: channelId },
+        data: { updatedAt: new Date() },
+      }),
+    ]);
 
     const payload: ChatMessagePayload = {
       id: message.id,
@@ -318,43 +323,26 @@ export class ChatService {
     userId: string,
     emoji: string,
   ) {
-    const message = await this.prisma.chatMessage.findUnique({
-      where: { id: messageId },
-    });
-
-    if (!message) {
-      throw new NotFoundException('Message not found');
-    }
-
-    const reactions = (message.reactions as any[]) || [];
-    const existing = reactions.find(
-      (r: any) => r.userId === userId && r.emoji === emoji,
-    );
-
-    if (existing) {
-      throw new ConflictException('Reaction already exists');
-    }
-
-    reactions.push({
-      emoji,
-      userId,
-      timestamp: new Date().toISOString(),
-    });
-
-    await this.prisma.chatMessage.update({
-      where: { id: messageId },
-      data: { reactions },
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const msg = await tx.chatMessage.findUnique({ where: { id: messageId } });
+      if (!msg) throw new NotFoundException('Message not found');
+      const reactions = (msg.reactions as any[]) || [];
+      if (reactions.find((r: any) => r.userId === userId && r.emoji === emoji)) {
+        throw new ConflictException('Reaction already exists');
+      }
+      reactions.push({ emoji, userId, timestamp: new Date().toISOString() });
+      return tx.chatMessage.update({ where: { id: messageId }, data: { reactions } });
     });
 
     await this.redis.publish('reaction.added', {
       messageId,
-      channelId: message.channelId,
+      channelId: updated.channelId,
       userId,
       emoji,
-      reactions: this.formatReactions(reactions),
+      reactions: this.formatReactions(updated.reactions),
     });
 
-    return { reactions: this.formatReactions(reactions) };
+    return { reactions: this.formatReactions(updated.reactions) };
   }
 
   async removeReaction(
@@ -362,33 +350,25 @@ export class ChatService {
     userId: string,
     emoji: string,
   ) {
-    const message = await this.prisma.chatMessage.findUnique({
-      where: { id: messageId },
-    });
-
-    if (!message) {
-      throw new NotFoundException('Message not found');
-    }
-
-    let reactions = (message.reactions as any[]) || [];
-    reactions = reactions.filter(
-      (r: any) => !(r.userId === userId && r.emoji === emoji),
-    );
-
-    await this.prisma.chatMessage.update({
-      where: { id: messageId },
-      data: { reactions },
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const msg = await tx.chatMessage.findUnique({ where: { id: messageId } });
+      if (!msg) throw new NotFoundException('Message not found');
+      let reactions = (msg.reactions as any[]) || [];
+      reactions = reactions.filter(
+        (r: any) => !(r.userId === userId && r.emoji === emoji),
+      );
+      return tx.chatMessage.update({ where: { id: messageId }, data: { reactions } });
     });
 
     await this.redis.publish('reaction.removed', {
       messageId,
-      channelId: message.channelId,
+      channelId: updated.channelId,
       userId,
       emoji,
-      reactions: this.formatReactions(reactions),
+      reactions: this.formatReactions(updated.reactions),
     });
 
-    return { reactions: this.formatReactions(reactions) };
+    return { reactions: this.formatReactions(updated.reactions) };
   }
 
   async editMessage(
@@ -480,7 +460,7 @@ export class ChatService {
     return { success: true };
   }
 
-  async getThreadMessages(parentId: string, userId?: string) {
+  async getThreadMessages(parentId: string, userId?: string, limit = 100) {
     const parent = await this.prisma.chatMessage.findUnique({
       where: { id: parentId },
       include: { sender: true, channel: true },
@@ -506,6 +486,7 @@ export class ChatService {
     const replies = await this.prisma.chatMessage.findMany({
       where: { parentId },
       orderBy: { createdAt: 'asc' },
+      take: limit,
       include: { sender: true },
     });
 
@@ -567,6 +548,8 @@ export class ChatService {
   }
 
   async pinMessage(messageId: string, userId: string) {
+    // TODO: combine membership check with message fetch in single query for efficiency
+
     const message = await this.prisma.chatMessage.findUnique({
       where: { id: messageId },
       include: { channel: true },
@@ -614,6 +597,8 @@ export class ChatService {
       where: { id: messageId },
       include: { channel: true },
     });
+    // TODO: combine membership check with message fetch in single query for efficiency
+
 
     if (!message) {
       throw new NotFoundException('Message not found');

@@ -36,6 +36,9 @@ export class KratosSessionGuard implements CanActivate {
     });
 
     const identity = session.identity ?? {};
+    if (!identity.id || typeof identity.id !== 'string') {
+      throw new UnauthorizedException('Invalid identity');
+    }
     const traits = (identity.traits ?? {}) as Record<string, any>;
     const email =
       traits['email'] ??

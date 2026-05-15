@@ -32,7 +32,7 @@ export class CommandContext {
     this.timestamp = payload.timestamp;
   }
 
-  async reply(content: string): Promise<void> {
-    await this.bot.sendMessage(this.channelId, content);
+  async reply(content: string, attachments?: string[]): Promise<void> {
+    await this.bot.sendMessage(this.channelId, content, attachments);
   }
 }
