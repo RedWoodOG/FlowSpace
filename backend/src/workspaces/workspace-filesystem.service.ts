@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -33,7 +33,11 @@ export class WorkspaceFilesystemService {
    * Get the full path for a specific workspace
    */
   getWorkspacePath(workspaceSlug: string): string {
-    return path.join(this.baseWorkspacePath, workspaceSlug);
+    const resolved = path.resolve(this.baseWorkspacePath, workspaceSlug);
+    if (!resolved.startsWith(path.resolve(this.baseWorkspacePath))) {
+      throw new ForbiddenException('Invalid workspace path');
+    }
+    return resolved;
   }
 
   /**

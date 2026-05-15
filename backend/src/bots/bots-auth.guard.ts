@@ -37,7 +37,11 @@ export class BotAuthGuard implements CanActivate {
       return true;
     }
 
-    // WebSocket — delegate to gateway-level auth
-    return true;
+    if (type === 'ws') {
+      // WebSocket — delegate to gateway-level auth
+      return true;
+    }
+
+    throw new UnauthorizedException('BotAuthGuard only supports HTTP and WebSocket contexts');
   }
 }

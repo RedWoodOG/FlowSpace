@@ -4,7 +4,7 @@
     "description": "",
     "main": "index.js",
     "bin": "dist/src/main.js",
-  "scripts": {
+    "scripts": {
         "prestart:dev": "node -e \"require('child_process').exec('npx prisma generate', (err) => { if (err) console.log('Prisma generate skipped (files locked, will retry on startup)'); process.exit(0); });\"",
         "start:dev": "nodemon --exec ts-node src/main.ts",
         "test": "npm run build",
@@ -31,6 +31,7 @@
         "@nestjs/jwt": "^11.0.0",
         "@nestjs/platform-express": "^11.1.8",
         "@nestjs/platform-socket.io": "^11.1.8",
+        "@nestjs/throttler": "^6.5.0",
         "@nestjs/typeorm": "^11.0.0",
         "@nestjs/websockets": "^11.1.8",
         "@prisma/client": "^6.19.0",
@@ -45,6 +46,7 @@
         "bcrypt": "^6.0.0",
         "class-transformer": "^0.5.1",
         "class-validator": "^0.14.2",
+        "helmet": "^8.1.0",
         "ioredis": "^5.8.2",
         "jsonwebtoken": "^9.0.2",
         "livekit-server-sdk": "^2.14.1",

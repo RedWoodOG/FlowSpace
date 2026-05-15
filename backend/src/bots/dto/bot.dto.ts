@@ -4,12 +4,12 @@ export class CreateBotDto {
   @IsString()
   @MinLength(1)
   @MaxLength(64)
-  name: string;
+  name!: string;
 
   @IsString()
   @MinLength(1)
   @MaxLength(128)
-  displayName: string;
+  displayName!: string;
 
   @IsOptional()
   @IsString()
@@ -46,11 +46,11 @@ export class CreateCommandDto {
   @IsString()
   @MinLength(1)
   @MaxLength(64)
-  command: string;
+  command!: string;
 
   @IsString()
   @MaxLength(200)
-  description: string;
+  description!: string;
 
   @IsOptional()
   @IsString()
@@ -84,5 +84,5 @@ export class SubscribeEventDto {
   @IsString()
   @MinLength(1)
   @MaxLength(64)
-  event: string;
+  event!: string;
 }

@@ -48,11 +48,10 @@ Local-first by default with server-ready connection settings for self-hosted dep
 - **Workspace-Scoped** — Results filtered by workspace membership
 - **Multi-Type** — Filter by messages, files, projects, or all
 
-### Realtime Infrastructure (HARDENED)
+### Realtime Infrastructure
 - **JWT-Authenticated WebSocket** — Secure Socket.IO connections with token validation
 - **Exponential Backoff** — Automatic reconnection with 1s→30s backoff
-- **Event Deduplication** — LRU-based dedup cache prevents duplicate events
-- **Redis Pub/Sub** — Horizontally scalable event dispatch across server instances
+- **Redis Pub/Sub** — Horizontally scalable event dispatch across server instances (requires REDIS_URL)
 
 ### Cross-Platform Client
 - **Windows** — Primary target with NSIS installer and portable builds
@@ -196,13 +195,13 @@ flutter run -d windows
 | Auth (JWT + refresh) | 🟡 Yellow |
 | Workspace management | 🟢 Green |
 | Streams (chat, threads, reactions) | 🟢 Green |
-| Realtime (Socket.IO + dedup) | 🟢 Green |
+| Realtime (Socket.IO + dedup) | 🟡 Yellow |
 | Connect (LiveKit meetings) | 🟡 Yellow |
 | Vault (file storage) | 🟡 Yellow |
 | Presence (heartbeat + status) | 🟡 Yellow |
 | Notifications | 🟡 Yellow |
 | Projects (templates + boards) | 🟡 Yellow |
-| Bots & automation | 🟢 Green |
+| Bots & automation | 🟡 Yellow |
 | Admin (members, roles, audit) | 🟢 Green |
 | Search (full-text) | 🟢 Green |
 | Release workflow | 🟡 Yellow |
