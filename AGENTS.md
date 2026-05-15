@@ -18,7 +18,7 @@
 
 ### Prerequisites (must be running before backend starts)
 
-- **PostgreSQL** on `localhost:5432` — database `flowspace`, user `flowspace`/`flowspace`
+- **PostgreSQL** on `localhost:5432` — use `DATABASE_URL` in `backend/.env` (see `backend/env.development` for a Docker-oriented template; set your own credentials for local installs)
 - **Redis** on `localhost:6379` — used for Socket.IO horizontal scaling; backend gracefully falls back to in-memory adapter if unavailable
 
 Start services:
@@ -46,12 +46,7 @@ sudo redis-server --daemonize yes
 
 ### Test Account (local dev)
 
-```text
-Email: dev@flowspace.app
-Password: TestPass123!
-```
-
-Or register via `POST /api/v1/auth/register` with `{ email, password, name }`.
+Register a user via `POST /api/v1/auth/register` with `{ email, password, name }`, then use that email and password to sign in.
 
 ### Flutter Client
 
