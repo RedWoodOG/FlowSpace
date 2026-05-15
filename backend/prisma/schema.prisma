@@ -304,3 +304,104 @@ model RefreshToken {
   @@index([userId])
   @@index([token])
 }
+
+// ============================================
+// BOT MODELS
+// ============================================
+
+model Bot {
+  id          String       @id @default(uuid())
+  workspaceId String
+  name        String       // unique identifier per workspace (e.g. "pollbot")
+  displayName String       // human-readable name
+  description String?
+  avatarUrl   String?
+  createdBy   String       // user who created the bot
+  status      BotStatus    @default(ACTIVE)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  apiKeys     BotApiKey[]
+  commands    BotCommand[]
+  events      BotEventSubscription[]
+  messages    BotMessage[]
+
+  @@unique([workspaceId, name])
+  @@index([workspaceId])
+  @@index([workspaceId, status])
+}
+
+model BotApiKey {
+  id        String    @id @default(uuid())
+  botId     String
+  keyHash   String    // bcrypt hash of the API key
+  prefix    String    // first 12 chars for display (e.g. "flo_xxxxxxxx...")
+  lastUsed  DateTime?
+  expiresAt DateTime? // optional expiry
+  createdAt DateTime  @default(now())
+
+  bot       Bot       @relation(fields: [botId], references: [id], onDelete: Cascade)
+
+  @@index([botId])
+  @@index([keyHash])
+  @@index([prefix])
+}
+
+model BotCommand {
+  id          String         @id @default(uuid())
+  botId       String
+  command     String         // e.g. "/help", "/poll create"
+  description String         // e.g. "Display help information"
+  handlerType BotHandlerType @default(WEBSOCKET)
+  handlerUrl  String?        // webhook URL (only for WEBHOOK type)
+  enabled     Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  bot         Bot            @relation(fields: [botId], references: [id], onDelete: Cascade)
+
+  @@unique([botId, command])
+  @@index([botId])
+}
+
+model BotEventSubscription {
+  id        String   @id @default(uuid())
+  botId     String
+  event     String   // e.g. "message.new", "channel.created", "user.joined"
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  bot       Bot      @relation(fields: [botId], references: [id], onDelete: Cascade)
+
+  @@unique([botId, event])
+  @@index([botId])
+}
+
+model BotMessage {
+  id          String      @id @default(uuid())
+  botId       String
+  channelId   String
+  content     String
+  attachments String[]    @default([])
+  parentId    String?
+  createdAt   DateTime    @default(now())
+
+  bot         Bot         @relation(fields: [botId], references: [id], onDelete: Cascade)
+  channel     Channel     @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  parent      ChatMessage? @relation("BotMessageThread", fields: [parentId], references: [id])
+
+  @@index([botId, createdAt])
+  @@index([channelId, createdAt])
+}
+
+enum BotStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum BotHandlerType {
+  WEBSOCKET
+  WEBHOOK
+  INLINE
+}

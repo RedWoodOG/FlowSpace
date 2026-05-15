@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../services/database_service.dart';
 import '../../services/workspace_service.dart';
 
+import '../screens/bot_list_screen.dart';
 class WorkspaceSettingsView extends StatefulWidget {
   final String? workspaceName;
   
@@ -174,6 +175,8 @@ class _WorkspaceSettingsViewState extends State<WorkspaceSettingsView> {
           _buildMembersList(),
           const SizedBox(height: 32),
           _buildChannelsList(),
+          const SizedBox(height: 32),
+          _buildBotsButton(),
         ],
       ),
     );
@@ -485,6 +488,45 @@ class _WorkspaceSettingsViewState extends State<WorkspaceSettingsView> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildBotsButton() {
+    final workspaceId = _workspace?['id'] as String? ?? '';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Automation',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        ListTile(
+          leading: const Icon(Icons.smart_toy, color: Color(0xFF0066FF)),
+          title: const Text('Bots', style: TextStyle(color: Colors.white)),
+          subtitle: const Text(
+            'Create and manage bot assistants',
+            style: TextStyle(color: Colors.white54),
+          ),
+          trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white38, size: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          tileColor: Colors.white.withOpacity(0.05),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => BotListScreen(
+                  workspaceId: workspaceId,
+                ),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 

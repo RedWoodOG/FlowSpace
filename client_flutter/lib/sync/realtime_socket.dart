@@ -2,39 +2,83 @@
 
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 
+import '../services/auth_service.dart';
 import 'sync_message.dart';
 
 typedef SyncMessageHandler = void Function(SyncMessage msg);
+typedef VoidCallback = void Function();
+
+enum RealtimeConnectionState {
+  connecting,
+  connected,
+  disconnected,
+  reconnecting,
+}
 
 class RealtimeSocket {
   final String url;
+  final String workspaceId;
   final SyncMessageHandler onMessage;
+  final VoidCallback? onConnected;
 
   WebSocket? _socket;
   Timer? _reconnectTimer;
-  bool _connecting = false;
+  int _retryCount = 0;
+  static const int _maxRetryDelaySeconds = 30;
+  RealtimeConnectionState _connectionState = RealtimeConnectionState.disconnected;
 
   RealtimeSocket({
     required this.url,
+    required this.workspaceId,
     required this.onMessage,
+    this.onConnected,
   });
 
+  RealtimeConnectionState get connectionState => _connectionState;
+
   Future<void> connect() async {
-    if (_connecting) return;
-    _connecting = true;
+    if (_connectionState == RealtimeConnectionState.connecting ||
+        _connectionState == RealtimeConnectionState.connected) {
+      return;
+    }
+
+    _connectionState = RealtimeConnectionState.connecting;
 
     try {
-      _socket = await WebSocket.connect(url);
+      final token = await AuthService.getToken();
+      final uri = Uri.parse(url).replace(
+        queryParameters: {
+          'workspaceId': workspaceId,
+          'token': token ?? '',
+        },
+      );
+
+      _socket = await WebSocket.connect(
+        uri.toString(),
+        headers: token != null ? {'Authorization': 'Bearer $token'} : {},
+      );
+
+      _connectionState = RealtimeConnectionState.connected;
+      _retryCount = 0;
+
+      onConnected?.call();
+
       _socket!.listen(
         _handleMessage,
-        onDone: _scheduleReconnect,
-        onError: (_) => _scheduleReconnect(),
+        onDone: () {
+          _connectionState = RealtimeConnectionState.disconnected;
+          _scheduleReconnect();
+        },
+        onError: (_) {
+          _connectionState = RealtimeConnectionState.disconnected;
+          _scheduleReconnect();
+        },
       );
     } catch (_) {
+      _connectionState = RealtimeConnectionState.disconnected;
       _scheduleReconnect();
-    } finally {
-      _connecting = false;
     }
   }
 
@@ -52,27 +96,31 @@ class RealtimeSocket {
     _socket!.add(msg.encode());
   }
 
+  int _computeBackoff() {
+    final delay = min(pow(2, _retryCount).toInt(), _maxRetryDelaySeconds);
+    _retryCount++;
+    return delay;
+  }
+
   void _scheduleReconnect() {
     if (_reconnectTimer != null) return;
 
-    _reconnectTimer = Timer.periodic(
-      const Duration(seconds: 3),
-      (_) {
-        if (_socket == null || _socket!.readyState != WebSocket.open) {
-          connect();
-        } else {
-          _reconnectTimer?.cancel();
-          _reconnectTimer = null;
-        }
-      },
-    );
+    _connectionState = RealtimeConnectionState.reconnecting;
+
+    final delaySeconds = _computeBackoff();
+    _reconnectTimer = Timer(Duration(seconds: delaySeconds), () {
+      _reconnectTimer = null;
+      connect();
+    });
   }
 
   void disconnect() {
-    _socket?.close();
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
+    _socket?.close();
     _socket = null;
+    _connectionState = RealtimeConnectionState.disconnected;
+    _retryCount = 0;
   }
 
   void dispose() {

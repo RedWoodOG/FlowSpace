@@ -7,6 +7,7 @@ import '../ui/screens/settings_screen.dart';
 import '../ui/screens/projects_screen.dart';
 import '../ui/screens/legacy_placeholder_screen.dart';
 import '../ui/screens/conversations_screen.dart';
+import '../ui/screens/bot_list_screen.dart';
 
 /// Unified navigation router for FlowSpace
 /// 
@@ -20,6 +21,7 @@ class AppRouter {
   static const String settings = '/settings';
   static const String projects = '/projects';
   static const String conversations = '/conversations';
+  static const String bots = '/bots';
   
   // Legacy routes (for backward compatibility)
   static const String home = '/';
@@ -34,7 +36,8 @@ class AppRouter {
     settings: (_) => const SettingsScreen(),
     projects: (_) => const ProjectsScreen(),
     conversations: (_) => const ConversationsScreen(),
-    createProject: (_) => const ProjectsScreen(), // Redirect to projects for now
+    bots: (_) => const BotListScreen(workspaceId: ''), // dynamic workspaceId via push
+    createProject: (_) => const ProjectsScreen(),
   };
 
   /// Fallback route for unknown destinations

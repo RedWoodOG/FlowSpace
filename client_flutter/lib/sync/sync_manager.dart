@@ -20,6 +20,9 @@ class SyncManager extends ChangeNotifier {
   final MergeEngine merge = MergeEngine();
   final SyncChannelRouter router = SyncChannelRouter();
 
+  final Set<String> _seenEventIds = {};
+  static const int _maxDedupEntries = 1000;
+
   String clientId = '';
   String? _projectId;
   String? _channelId;
@@ -31,6 +34,7 @@ class SyncManager extends ChangeNotifier {
   void initialize({
     required String url,
     required String clientId,
+    String workspaceId = '',
     String? projectId,
     String? channelId,
   }) {
@@ -43,7 +47,9 @@ class SyncManager extends ChangeNotifier {
 
     _socket = RealtimeSocket(
       url: scopedUrl,
+      workspaceId: workspaceId,
       onMessage: _handleIncoming,
+      onConnected: _clearDedupCache,
     );
 
     _socket.connect();
@@ -94,12 +100,30 @@ class SyncManager extends ChangeNotifier {
     final client = msg.payload['clientId'];
     final version = msg.payload['version'];
 
+    // Deduplicate by clientId-version-boardId combo
+    final eventId = '$client-$version-${msg.boardId}';
+    if (isDuplicate(eventId)) return;
+
     if (client != null && version != null) {
       versionVector.update(client, version);
     }
 
     router.route(msg);
     merge.apply(msg);
+  }
+
+  /// Check if an event ID has already been processed.
+  bool isDuplicate(String eventId) {
+    if (_seenEventIds.contains(eventId)) return true;
+    _seenEventIds.add(eventId);
+    while (_seenEventIds.length > _maxDedupEntries) {
+      _seenEventIds.remove(_seenEventIds.first);
+    }
+    return false;
+  }
+
+  void _clearDedupCache() {
+    _seenEventIds.clear();
   }
 
   void _startFlushLoop() {

@@ -5,6 +5,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PrismaModule } from '../database/prisma.module';
 import { SharedModule } from '../shared/shared.module';
 import { AuthModule } from '../auth/auth.module';
+import { BotsModule } from '../bots/bots.module';
 import { ChatController } from './chat.controller';
 import { ChatGateway } from './chat.gateway';
 import { ChatService } from './chat.service';
@@ -14,6 +15,7 @@ import { ChatService } from './chat.service';
     PrismaModule,
     SharedModule,
     AuthModule,
+    BotsModule,
     ConfigModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

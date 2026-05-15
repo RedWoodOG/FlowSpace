@@ -1,0 +1,22 @@
+{
+  "name": "@flowspace/bot-sdk",
+  "version": "1.0.0",
+  "description": "FlowSpace Bot SDK — build bots that connect to FlowSpace workspaces",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "socket.io-client": "^4.7.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  },
+  "keywords": ["flowspace", "bot", "sdk", "chat"],
+  "license": "MIT"
+}

@@ -20,6 +20,11 @@ import { ProjectsModule } from './projects/projects.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AIModule } from './ai/ai.module';
 import { DownloadsModule } from './downloads/downloads.module';
+import { SearchModule } from './search/search.module';
+
+import { BotsModule } from './bots/bots.module';
+import { AdminModule } from './admin/admin.module';
+
 
 @Module({
   imports: [
@@ -37,10 +42,13 @@ import { DownloadsModule } from './downloads/downloads.module';
     P2PRuntimeModule,
     UpdatesModule,
     AssetsModule,
+    BotsModule,
+    AdminModule,
     ProjectsModule,
     AnalyticsModule,
     AIModule,
     DownloadsModule,
+    SearchModule,
   ],
   controllers: [AppController],
   providers: [AppService],

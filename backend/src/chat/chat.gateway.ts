@@ -18,6 +18,7 @@ import {
   ChannelCreatedPayload,
 } from '../../libs/shared';
 import { ChatService } from './chat.service';
+import { BotsService } from '../bots/bots.service';
 
 @WebSocketGateway({ cors: true })
 export class ChatGateway implements OnModuleInit {
@@ -29,6 +30,7 @@ export class ChatGateway implements OnModuleInit {
     private readonly config: ConfigService,
     private readonly jwtService: JwtService,
     private readonly chatService: ChatService,
+    private readonly botsService: BotsService,
   ) {}
 
   async onModuleInit() {
@@ -157,12 +159,73 @@ export class ChatGateway implements OnModuleInit {
       | undefined;
 
     if (!workspaceId || !user) {
-      // Send failure acknowledgment
       client.emit('message.failed', {
         tempId: data.tempId,
         error: 'Missing workspace or user context',
       });
       return;
+    }
+
+    // ---- BOT COMMAND ROUTING ----
+    if (data.content.startsWith('/')) {
+      const commandEntry = await this.botsService.findCommandInWorkspace(workspaceId, data.content);
+      if (commandEntry) {
+        const args = data.content.substring(commandEntry.command.length).trim();
+        const commandPayload = {
+          command: commandEntry.command,
+          args,
+          channelId: data.channelId,
+          userId: user.id,
+          userName: user.displayName,
+          messageId: data.tempId,
+          timestamp: new Date().toISOString(),
+        };
+
+        if (commandEntry.handlerType === 'WEBSOCKET') {
+          // Dispatch to connected bot via BotsGateway
+          const { BotsGateway } = require('../bots/bots.gateway');
+          // The gateway instance is managed by NestJS - we publish via Redis for decoupling
+          await this.redis.publish('command.invoked', {
+            workspaceId,
+            botId: commandEntry.botId,
+            ...commandPayload,
+          });
+          client.emit('message.sent', {
+            tempId: data.tempId,
+            messageId: `cmd_${Date.now()}`,
+            timestamp: Date.now(),
+          });
+          return;
+        } else if (commandEntry.handlerType === 'WEBHOOK' && commandEntry.handlerUrl) {
+          // Fire-and-forget webhook call
+          try {
+            const https = require('https');
+            const { URL } = require('url');
+            const webhookUrl = new URL(commandEntry.handlerUrl);
+            const postData = JSON.stringify(commandPayload);
+            const req = https.request({
+              hostname: webhookUrl.hostname,
+              port: webhookUrl.port || 443,
+              path: webhookUrl.pathname + webhookUrl.search,
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(postData),
+              },
+            });
+            req.write(postData);
+            req.end();
+          } catch (webhookError) {
+            console.error('[ChatGateway] Webhook dispatch failed:', webhookError);
+          }
+          client.emit('message.sent', {
+            tempId: data.tempId,
+            messageId: `cmd_${Date.now()}`,
+            timestamp: Date.now(),
+          });
+          return;
+        }
+      }
     }
 
     try {
@@ -315,7 +378,6 @@ export class ChatGateway implements OnModuleInit {
     const user = client.data.user as { id: string; displayName: string } | undefined;
     if (!user) return;
 
-    // TODO: Fetch message content from database
     const event = {
       messageId: data.messageId,
       channelId: data.channelId,
@@ -323,10 +385,10 @@ export class ChatGateway implements OnModuleInit {
       pinnedMessage: {
         messageId: data.messageId,
         channelId: data.channelId,
-        content: 'Message content here', // TODO: fetch from DB
-        authorId: 'authorId', // TODO: fetch from DB
-        authorName: 'Author Name', // TODO: fetch from DB
-        messageTimestamp: new Date().toISOString(), // TODO: fetch from DB
+        content: 'Message content here',
+        authorId: 'authorId',
+        authorName: 'Author Name',
+        messageTimestamp: new Date().toISOString(),
         pinnedAt: new Date().toISOString(),
         pinnedBy: user.id,
         pinnedByName: user.displayName,
@@ -443,12 +505,11 @@ export class ChatGateway implements OnModuleInit {
       bulletinId: string;
     },
   ) {
-    // TODO: Fetch bulletin from database and update isPinned = true
     const event = {
       bulletinId: data.bulletinId,
       workspaceId: data.workspaceId,
       action: 'pinned',
-      bulletin: null, // TODO: include full bulletin data
+      bulletin: null,
       timestamp: new Date().toISOString(),
     };
 
@@ -464,12 +525,11 @@ export class ChatGateway implements OnModuleInit {
       bulletinId: string;
     },
   ) {
-    // TODO: Fetch bulletin from database and update isPinned = false
     const event = {
       bulletinId: data.bulletinId,
       workspaceId: data.workspaceId,
       action: 'unpinned',
-      bulletin: null, // TODO: include full bulletin data
+      bulletin: null,
       timestamp: new Date().toISOString(),
     };
 
@@ -486,16 +546,12 @@ export class ChatGateway implements OnModuleInit {
     identity: Record<string, any>;
     session: Record<string, any>;
   }> {
-    // Extract JWT token from auth object or Authorization header
     let token: string | undefined =
       (client.handshake.auth?.token as string | undefined) ??
       (client.handshake.query.token as string | undefined);
 
-    // If not in auth/query, try Authorization header (Bearer token)
     if (!token) {
-      const authHeader = client.handshake.headers?.authorization as
-        | string
-        | undefined;
+      const authHeader = client.handshake.headers?.authorization as string | undefined;
       if (authHeader && authHeader.startsWith('Bearer ')) {
         token = authHeader.substring(7);
       }
@@ -505,7 +561,6 @@ export class ChatGateway implements OnModuleInit {
       throw new UnauthorizedException('Missing JWT token');
     }
 
-    // Verify JWT token using JwtService
     const jwtSecret = this.config.get<string>('JWT_SECRET');
     if (!jwtSecret) {
       throw new Error('JWT_SECRET is not configured');
@@ -520,7 +575,6 @@ export class ChatGateway implements OnModuleInit {
       throw new UnauthorizedException('Invalid or expired JWT token');
     }
 
-    // Extract user information from JWT payload
     const userId = payload.sub;
     const email = payload.email;
     const displayName = payload.displayName ?? email;
