@@ -22,6 +22,7 @@
 - **Redis** on `localhost:6379` — used for Socket.IO horizontal scaling; backend gracefully falls back to in-memory adapter if unavailable
 
 Start services:
+
 ```bash
 sudo pg_ctlcluster 16 main start
 sudo redis-server --daemonize yes
@@ -45,7 +46,7 @@ sudo redis-server --daemonize yes
 
 ### Test Account (local dev)
 
-```
+```text
 Email: dev@flowspace.app
 Password: TestPass123!
 ```

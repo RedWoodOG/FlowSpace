@@ -1,4 +1,5 @@
 import { IsString, IsOptional, IsBoolean, IsEnum, MaxLength, MinLength } from 'class-validator';
+import { BotHandlerType } from '@prisma/client';
 
 export class CreateBotDto {
   @IsString()
@@ -53,8 +54,8 @@ export class CreateCommandDto {
   description!: string;
 
   @IsOptional()
-  @IsString()
-  handlerType?: string;
+  @IsEnum(BotHandlerType)
+  handlerType?: BotHandlerType;
 
   @IsOptional()
   @IsString()
@@ -72,8 +73,8 @@ export class UpdateCommandDto {
   enabled?: boolean;
 
   @IsOptional()
-  @IsString()
-  handlerType?: string;
+  @IsEnum(BotHandlerType)
+  handlerType?: BotHandlerType;
 
   @IsOptional()
   @IsString()

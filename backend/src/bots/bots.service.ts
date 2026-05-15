@@ -173,7 +173,7 @@ export class BotsService {
     workspaceId: string,
     botId: string,
     userId: string,
-    data: { command: string; description: string; handlerType?: string; handlerUrl?: string },
+    data: { command: string; description: string; handlerType?: BotHandlerType; handlerUrl?: string },
   ) {
     await this.requireAdmin(workspaceId, userId);
     await this.requireBotOwnership(workspaceId, botId);
@@ -190,7 +190,7 @@ export class BotsService {
         botId,
         command: data.command,
         description: data.description,
-        handlerType: (data.handlerType as BotHandlerType) || BotHandlerType.WEBSOCKET,
+        handlerType: data.handlerType || BotHandlerType.WEBSOCKET,
         handlerUrl: data.handlerUrl,
       },
     });
@@ -209,7 +209,7 @@ export class BotsService {
     botId: string,
     commandId: string,
     userId: string,
-    data: { description?: string; enabled?: boolean; handlerType?: string; handlerUrl?: string },
+    data: { description?: string; enabled?: boolean; handlerType?: BotHandlerType; handlerUrl?: string },
   ) {
     await this.requireAdmin(workspaceId, userId);
     await this.requireBotOwnership(workspaceId, botId);
@@ -223,10 +223,7 @@ export class BotsService {
 
     return this.prisma.botCommand.update({
       where: { id: commandId },
-      data: {
-        ...data,
-        handlerType: data.handlerType ? (data.handlerType as BotHandlerType) : undefined,
-      },
+      data,
     });
   }
 
