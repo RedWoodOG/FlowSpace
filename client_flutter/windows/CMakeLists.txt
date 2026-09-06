@@ -32,6 +32,13 @@ set(CMAKE_CXX_FLAGS_PROFILE "${CMAKE_CXX_FLAGS_RELEASE}")
 # Use Unicode for all projects.
 add_definitions(-DUNICODE -D_UNICODE)
 
+# MSVC 14.51 promotes <experimental/coroutine> to a hard error (STL1011). C++/WinRT
+# still reaches for that header when compiled as C++17, which is what
+# APPLY_STANDARD_SETTINGS gives every plugin, so audioplayers_windows fails to build
+# on an up-to-date toolchain even though it builds on older ones. This definition is
+# directory-scoped and is inherited by the plugin subdirectories added below.
+add_definitions(-D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)
+
 # Compilation settings that should be applied to most targets.
 #
 # Be cautious about adding new options here, as plugins use this function by
