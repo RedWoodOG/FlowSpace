@@ -4,7 +4,7 @@
 
 This file is generated. Edit `system_graph/flowspace.systemgraph.contract.json` or source code, then regenerate it.
 
-- Source fingerprint: `d064d5132450544a877c19e7dfcfd6230f6350e5cb7310d974fe4f5cb648c140`
+- Source fingerprint: `07a87c1815b7a468ae611aaf7ce65568716c98dd4f00104ab3502972a8767f2d`
 - Nodes: 422
 - Edges: 378
 - Contract nodes: 23

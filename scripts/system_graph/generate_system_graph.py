@@ -56,6 +56,18 @@ def digest_bytes(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
 
 
+def digest_source(path: Path) -> str:
+    """Hash file content with line endings normalised.
+
+    The fingerprint must describe the source, not the checkout. Git for
+    Windows with core.autocrlf=true - which is what the CI runner gets -
+    materialises CRLF, and hashing raw bytes would then disagree with an
+    LF checkout and report every generated output as stale.
+    """
+    data = path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return digest_bytes(data)
+
+
 def source_files() -> list[Path]:
     files: list[Path] = []
     for root in SOURCE_ROOTS:
@@ -103,7 +115,7 @@ def file_node(path: Path) -> dict[str, Any]:
         "status": "present",
         "contract": False,
         "path": rel,
-        "sha256": digest_bytes(path.read_bytes()),
+        "sha256": digest_source(path),
     }
 
 
