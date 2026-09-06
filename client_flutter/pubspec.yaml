@@ -88,6 +88,7 @@ flutter:
     - assets/icons/
     - assets/sounds/
     - assets/build_info.json
+    - assets/system_graph/flowspace_system_graph.json
 
 flutter_icons:
   windows: true

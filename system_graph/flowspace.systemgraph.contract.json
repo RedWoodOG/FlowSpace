@@ -1,0 +1,244 @@
+{
+  "schema": "flowspace.systemgraph.contract.v1",
+  "title": "FlowSpace System Node Graph",
+  "product_rule": "Visible UI is a shipping claim. Every visible surface and control must resolve to real code, state, authority, persistence, and proof.",
+  "layer_order": [
+    "entry",
+    "surface",
+    "interaction",
+    "state",
+    "service",
+    "persistence",
+    "backend",
+    "domain",
+    "validation"
+  ],
+  "shipping_surfaces": [
+    {
+      "id": "surface.system_graph",
+      "label": "System",
+      "status": "wired",
+      "nav_visible": true,
+      "source": "client_flutter/lib/ui/screens/system_graph_screen.dart",
+      "symbol": "SystemGraphScreen",
+      "test": "client_flutter/test/system_graph_screen_test.dart"
+    },
+    {
+      "id": "surface.onboarding.welcome",
+      "label": "Welcome",
+      "status": "wired",
+      "nav_visible": false,
+      "source": "client_flutter/lib/ui/onboarding/welcome_screen.dart",
+      "symbol": "WelcomeScreen",
+      "test": "client_flutter/test/shipping_surface_contract_test.dart"
+    },
+    {
+      "id": "surface.onboarding.login",
+      "label": "Login",
+      "status": "wired",
+      "nav_visible": false,
+      "source": "client_flutter/lib/ui/onboarding/login_screen.dart",
+      "symbol": "LoginScreen",
+      "test": "client_flutter/test/shipping_surface_contract_test.dart"
+    },
+    {
+      "id": "surface.onboarding.setup",
+      "label": "Create local account",
+      "status": "wired",
+      "nav_visible": false,
+      "source": "client_flutter/lib/ui/onboarding/setup_user_screen.dart",
+      "symbol": "SetupUserScreen",
+      "test": "client_flutter/test/shipping_surface_contract_test.dart"
+    },
+    {
+      "id": "surface.onboarding.setup_complete",
+      "label": "Local account ready",
+      "status": "wired",
+      "nav_visible": false,
+      "source": "client_flutter/lib/ui/onboarding/setup_complete_screen.dart",
+      "symbol": "SetupCompleteScreen",
+      "test": "client_flutter/test/shipping_surface_contract_test.dart"
+    }
+  ],
+  "quarantined_surfaces": [
+    {
+      "id": "surface.workspace",
+      "label": "Workspace",
+      "source": "client_flutter/lib/ui/screens/workspace_screen.dart",
+      "reason": "Hard-coded user, workspace, activity, project, progress, and release data plus empty navigation actions."
+    },
+    {
+      "id": "surface.streams",
+      "label": "Streams",
+      "source": "client_flutter/lib/ui/screens/streams_screen.dart",
+      "reason": "Core read/send paths have local fallback, but visible reactions, threads, pins, and header actions are not locally wired."
+    },
+    {
+      "id": "surface.connect",
+      "label": "Connect",
+      "source": "client_flutter/lib/ui/views/meet_view.dart",
+      "reason": "Visible meeting actions require backend endpoints and have no truthful local-mode capability path."
+    },
+    {
+      "id": "surface.calendar",
+      "label": "Calendar",
+      "source": "client_flutter/lib/ui/views/calendar_view.dart",
+      "reason": "The visible surface is a date picker without event state, persistence, scheduling, or calendar tests."
+    },
+    {
+      "id": "surface.vault",
+      "label": "Vault",
+      "source": "client_flutter/lib/ui/screens/vault_screen.dart",
+      "reason": "Listing can fall back to SQLite, but visible upload, delete, and open paths are not a complete local-first contract."
+    },
+    {
+      "id": "surface.projects",
+      "label": "Projects",
+      "source": "client_flutter/lib/ui/screens/projects_screen.dart",
+      "reason": "Local project/task code exists, but the complete visible journey lacks an isolated integration proof and graph-bound control inventory."
+    },
+    {
+      "id": "surface.settings",
+      "label": "Settings",
+      "source": "client_flutter/lib/ui/screens/settings_screen.dart",
+      "reason": "The visible settings tree contains null handlers and explicit coming-soon actions."
+    }
+  ],
+  "manual_nodes": [
+    {
+      "id": "entry.flowspace",
+      "label": "FlowSpace startup",
+      "layer": "entry",
+      "kind": "entry",
+      "status": "wired",
+      "contract": true,
+      "path": "client_flutter/lib/main.dart",
+      "symbol": "main"
+    },
+    {
+      "id": "interaction.system_graph.search",
+      "label": "Search graph",
+      "layer": "interaction",
+      "kind": "control",
+      "status": "wired",
+      "contract": true,
+      "path": "client_flutter/lib/ui/screens/system_graph_screen.dart",
+      "symbol": "_query"
+    },
+    {
+      "id": "interaction.system_graph.scope",
+      "label": "Contract / all code scope",
+      "layer": "interaction",
+      "kind": "control",
+      "status": "wired",
+      "contract": true,
+      "path": "client_flutter/lib/ui/screens/system_graph_screen.dart",
+      "symbol": "_showAllCode"
+    },
+    {
+      "id": "state.system_graph.document",
+      "label": "Parsed graph document",
+      "layer": "state",
+      "kind": "state",
+      "status": "wired",
+      "contract": true,
+      "path": "client_flutter/lib/system_graph/system_graph_document.dart",
+      "symbol": "SystemGraphDocument"
+    },
+    {
+      "id": "service.system_graph.asset_repository",
+      "label": "Bundled graph loader",
+      "layer": "service",
+      "kind": "service",
+      "status": "wired",
+      "contract": true,
+      "path": "client_flutter/lib/system_graph/system_graph_repository.dart",
+      "symbol": "AssetSystemGraphRepository"
+    },
+    {
+      "id": "persistence.sqlite",
+      "label": "Local SQLite store",
+      "layer": "persistence",
+      "kind": "persistence",
+      "status": "present",
+      "contract": true,
+      "path": "client_flutter/lib/services/database_service.dart",
+      "symbol": "DatabaseService"
+    },
+    {
+      "id": "artifact.system_graph.json",
+      "label": "Generated graph asset",
+      "layer": "persistence",
+      "kind": "artifact",
+      "status": "wired",
+      "contract": true,
+      "path": "client_flutter/assets/system_graph/flowspace_system_graph.json"
+    },
+    {
+      "id": "backend.api",
+      "label": "FlowSpace API",
+      "layer": "backend",
+      "kind": "backend",
+      "status": "present",
+      "contract": true,
+      "path": "backend/src/app.module.ts",
+      "symbol": "AppModule"
+    },
+    {
+      "id": "gate.system_graph",
+      "label": "System graph freshness and wiring gate",
+      "layer": "validation",
+      "kind": "gate",
+      "status": "wired",
+      "contract": true,
+      "path": "scripts/system_graph/verify_system_graph.py",
+      "symbol": "main"
+    },
+    {
+      "id": "test.system_graph",
+      "label": "Graph parser and screen tests",
+      "layer": "validation",
+      "kind": "test",
+      "status": "wired",
+      "contract": true,
+      "path": "client_flutter/test/system_graph_screen_test.dart",
+      "symbol": "main"
+    },
+    {
+      "id": "test.shipping_surface_contract",
+      "label": "Shipping surface contract test",
+      "layer": "validation",
+      "kind": "test",
+      "status": "wired",
+      "contract": true,
+      "path": "client_flutter/test/shipping_surface_contract_test.dart",
+      "symbol": "main"
+    }
+  ],
+  "manual_edges": [
+    {"from": "entry.flowspace", "to": "surface.onboarding.welcome", "kind": "renders"},
+    {"from": "entry.flowspace", "to": "surface.system_graph", "kind": "renders"},
+    {"from": "surface.onboarding.welcome", "to": "surface.onboarding.login", "kind": "navigates"},
+    {"from": "surface.onboarding.welcome", "to": "surface.onboarding.setup", "kind": "navigates"},
+    {"from": "surface.onboarding.login", "to": "file:client_flutter/lib/services/auth_service.dart", "kind": "invokes"},
+    {"from": "surface.onboarding.setup", "to": "file:client_flutter/lib/services/auth_service.dart", "kind": "invokes"},
+    {"from": "surface.onboarding.setup", "to": "surface.onboarding.setup_complete", "kind": "navigates"},
+    {"from": "surface.onboarding.setup_complete", "to": "surface.system_graph", "kind": "navigates"},
+    {"from": "file:client_flutter/lib/services/auth_service.dart", "to": "persistence.sqlite", "kind": "reads_writes"},
+    {"from": "surface.system_graph", "to": "interaction.system_graph.search", "kind": "contains"},
+    {"from": "surface.system_graph", "to": "interaction.system_graph.scope", "kind": "contains"},
+    {"from": "interaction.system_graph.search", "to": "state.system_graph.document", "kind": "filters"},
+    {"from": "interaction.system_graph.scope", "to": "state.system_graph.document", "kind": "filters"},
+    {"from": "surface.system_graph", "to": "service.system_graph.asset_repository", "kind": "invokes"},
+    {"from": "service.system_graph.asset_repository", "to": "artifact.system_graph.json", "kind": "reads"},
+    {"from": "artifact.system_graph.json", "to": "state.system_graph.document", "kind": "hydrates"},
+    {"from": "gate.system_graph", "to": "artifact.system_graph.json", "kind": "regenerates_checks"},
+    {"from": "test.system_graph", "to": "surface.system_graph", "kind": "proves"},
+    {"from": "test.shipping_surface_contract", "to": "entry.flowspace", "kind": "proves"},
+    {"from": "test.shipping_surface_contract", "to": "surface.onboarding.welcome", "kind": "proves"},
+    {"from": "test.shipping_surface_contract", "to": "surface.onboarding.login", "kind": "proves"},
+    {"from": "test.shipping_surface_contract", "to": "surface.onboarding.setup", "kind": "proves"},
+    {"from": "test.shipping_surface_contract", "to": "surface.onboarding.setup_complete", "kind": "proves"},
+    {"from": "backend.api", "to": "persistence.sqlite", "kind": "does_not_own"}
+  ]
+}

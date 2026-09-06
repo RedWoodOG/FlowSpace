@@ -495,6 +495,34 @@ class AuthService {
     );
   }
 
+  /// Create and activate an account without contacting a remote server.
+  static Future<Map<String, dynamic>> createLocalAccount({
+    required String name,
+    required String email,
+    required String password,
+    required String workspaceName,
+  }) {
+    return _createLocalAccount(
+      name: name,
+      email: email,
+      password: password,
+      workspaceName: workspaceName,
+    );
+  }
+
+  /// Authenticate only against the local SQLite account store.
+  static Future<Map<String, dynamic>> loginLocal({
+    required String email,
+    required String password,
+    bool rememberMe = false,
+  }) {
+    return _loginLocal(
+      email: email,
+      password: password,
+      rememberMe: rememberMe,
+    );
+  }
+
   static Future<Map<String, dynamic>> _createLocalAccount({
     required String name,
     required String email,

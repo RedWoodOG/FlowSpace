@@ -1,0 +1,50 @@
+name: System graph gate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  shipping-wiring:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.41.9
+          cache: true
+
+      - name: Verify graph freshness and shipping wiring
+        shell: pwsh
+        run: python scripts/system_graph/verify_system_graph.py
+
+      - name: Resolve Flutter dependencies
+        working-directory: client_flutter
+        shell: pwsh
+        run: flutter pub get
+
+      - name: Analyze shipping sources
+        working-directory: client_flutter
+        shell: pwsh
+        run: |
+          dart analyze lib/main.dart
+          dart analyze lib/system_graph
+          dart analyze lib/ui/screens/system_graph_screen.dart
+          dart analyze lib/ui/shell/app_shell.dart
+          dart analyze lib/ui/onboarding
+          dart analyze test/system_graph_screen_test.dart
+          dart analyze test/shipping_surface_contract_test.dart
+
+      - name: Run Flutter tests
+        working-directory: client_flutter
+        shell: pwsh
+        run: flutter test --no-pub
+
+      - name: Build Windows release
+        working-directory: client_flutter
+        shell: pwsh
+        run: flutter build windows --release --no-pub

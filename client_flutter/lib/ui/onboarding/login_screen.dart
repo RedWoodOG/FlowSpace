@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/flo_theme.dart';
 import '../../services/auth_service.dart';
-import '../shell/workspace_shell.dart';
+import '../shell/app_shell.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,7 +14,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _rememberMe = false;
@@ -36,7 +36,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      await AuthService.loginWithRememberMe(
+      await AuthService.loginLocal(
         email: _emailController.text.trim(),
         password: _passwordController.text,
         rememberMe: _rememberMe,
@@ -44,28 +44,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => const WorkspaceShell(),
-          ),
+          MaterialPageRoute(builder: (context) => const AppShell()),
         );
       }
     } catch (e) {
-      String errorMsg = 'Login failed. Please check your credentials.';
-      
-      // Parse error message for user-friendly display
+      var errorMsg = 'Local login failed. Check the email and password.';
+
       final errorString = e.toString();
-      if (errorString.contains('Server is slow') || errorString.contains('timeout') || errorString.contains('Timeout')) {
-        errorMsg = 'Server is slow, please wait... The request took longer than 30 seconds. Please try again.';
-      } else if (errorString.contains('401') || errorString.contains('Unauthorized')) {
-        errorMsg = 'Invalid email or password. Please try again.';
-      } else if (errorString.contains('404')) {
-        errorMsg = 'User not found. Please check your email.';
-      } else if (errorString.contains('500')) {
-        errorMsg = 'Server error. Please try again later.';
-      } else if (errorString.contains('network') || errorString.contains('connection')) {
-        errorMsg = 'Connection error. Please check your internet connection.';
+      if (errorString.contains('No local account')) {
+        errorMsg = 'No local account matches that email.';
+      } else if (errorString.contains('Invalid local')) {
+        errorMsg = 'The local email or password is incorrect.';
       }
-      
+
       setState(() {
         _errorMessage = errorMsg;
         _isLoading = false;
@@ -87,7 +78,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   ShaderMask(
-                    shaderCallback: (bounds) => FloTheme.floGradient.createShader(bounds),
+                    shaderCallback: (bounds) =>
+                        FloTheme.floGradient.createShader(bounds),
                     child: const Text(
                       'FLŌ',
                       style: TextStyle(
@@ -101,23 +93,17 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 24),
                   const Text(
                     'Welcome Back',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Sign in to your account',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
+                    'Sign in to a local account',
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 32),
-                  
+
                   if (_errorMessage != null) ...[
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -128,12 +114,19 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.error_outline, color: Colors.red[700], size: 20),
+                          Icon(
+                            Icons.error_outline,
+                            color: Colors.red[700],
+                            size: 20,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               _errorMessage!,
-                              style: TextStyle(color: Colors.red[700], fontSize: 13),
+                              style: TextStyle(
+                                color: Colors.red[700],
+                                fontSize: 13,
+                              ),
                             ),
                           ),
                         ],
@@ -141,7 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 16),
                   ],
-                  
+
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
@@ -161,7 +154,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                   ),
                   const SizedBox(height: 16),
-                  
+
                   TextFormField(
                     controller: _passwordController,
                     obscureText: _obscurePassword,
@@ -170,7 +163,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       prefixIcon: const Icon(Icons.lock_outlined),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                          _obscurePassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
                         ),
                         onPressed: () {
                           setState(() {
@@ -188,7 +183,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Remember Me checkbox
                   Row(
                     children: [
@@ -200,11 +195,13 @@ class _LoginScreenState extends State<LoginScreen> {
                           });
                         },
                       ),
-                      const Text('Remember me for 7 days'),
+                      const Expanded(
+                        child: Text('Remember sign-in on this device'),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  
+
                   Container(
                     decoration: BoxDecoration(
                       gradient: FloTheme.floGradient,
@@ -218,7 +215,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         shadowColor: Colors.transparent,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(FloTheme.radiusMd),
+                          borderRadius: BorderRadius.circular(
+                            FloTheme.radiusMd,
+                          ),
                         ),
                       ),
                       child: _isLoading
@@ -227,17 +226,22 @@ class _LoginScreenState extends State<LoginScreen> {
                               width: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
                               ),
                             )
                           : const Text(
                               'Sign In',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  
+
                   TextButton(
                     onPressed: () {
                       Navigator.of(context).pop();
@@ -256,4 +260,3 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
-

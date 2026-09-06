@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/flo_theme.dart';
 import '../../services/auth_service.dart';
-import 'email_verification_screen.dart';
 import 'setup_complete_screen.dart';
 
 class SetupUserScreen extends StatefulWidget {
@@ -17,7 +16,7 @@ class _SetupUserScreenState extends State<SetupUserScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _workspaceController = TextEditingController();
-  
+
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -39,8 +38,7 @@ class _SetupUserScreenState extends State<SetupUserScreen> {
     });
 
     try {
-      // Use simple registration (no email verification)
-      await AuthService.register(
+      await AuthService.createLocalAccount(
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text,
@@ -79,7 +77,8 @@ class _SetupUserScreenState extends State<SetupUserScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   ShaderMask(
-                    shaderCallback: (bounds) => FloTheme.floGradient.createShader(bounds),
+                    shaderCallback: (bounds) =>
+                        FloTheme.floGradient.createShader(bounds),
                     child: const Text(
                       'FLŌ',
                       style: TextStyle(
@@ -92,24 +91,18 @@ class _SetupUserScreenState extends State<SetupUserScreen> {
                   ),
                   const SizedBox(height: 24),
                   const Text(
-                    'Create Your Account',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    'Create Local Account',
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Set up your profile and team',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
+                    'Create a local profile and workspace',
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 32),
-                  
+
                   if (_errorMessage != null) ...[
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -120,12 +113,19 @@ class _SetupUserScreenState extends State<SetupUserScreen> {
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.error_outline, color: Colors.red[700], size: 20),
+                          Icon(
+                            Icons.error_outline,
+                            color: Colors.red[700],
+                            size: 20,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               _errorMessage!,
-                              style: TextStyle(color: Colors.red[700], fontSize: 13),
+                              style: TextStyle(
+                                color: Colors.red[700],
+                                fontSize: 13,
+                              ),
                             ),
                           ),
                         ],
@@ -133,7 +133,7 @@ class _SetupUserScreenState extends State<SetupUserScreen> {
                     ),
                     const SizedBox(height: 16),
                   ],
-                  
+
                   TextFormField(
                     controller: _nameController,
                     decoration: const InputDecoration(
@@ -149,7 +149,7 @@ class _SetupUserScreenState extends State<SetupUserScreen> {
                     },
                   ),
                   const SizedBox(height: 16),
-                  
+
                   TextFormField(
                     controller: _emailController,
                     decoration: const InputDecoration(
@@ -169,7 +169,7 @@ class _SetupUserScreenState extends State<SetupUserScreen> {
                     },
                   ),
                   const SizedBox(height: 16),
-                  
+
                   TextFormField(
                     controller: _passwordController,
                     decoration: const InputDecoration(
@@ -189,7 +189,7 @@ class _SetupUserScreenState extends State<SetupUserScreen> {
                     },
                   ),
                   const SizedBox(height: 16),
-                  
+
                   TextFormField(
                     controller: _workspaceController,
                     decoration: const InputDecoration(
@@ -206,7 +206,7 @@ class _SetupUserScreenState extends State<SetupUserScreen> {
                     },
                   ),
                   const SizedBox(height: 32),
-                  
+
                   ElevatedButton(
                     onPressed: _isLoading ? null : _createAccount,
                     style: ElevatedButton.styleFrom(
@@ -223,12 +223,17 @@ class _SetupUserScreenState extends State<SetupUserScreen> {
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                             ),
                           )
                         : const Text(
                             'Create Account',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                   ),
                 ],

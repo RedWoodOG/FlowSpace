@@ -75,3 +75,7 @@ backend/startup.log
 # Test outputs
 test-results/
 coverage/
+
+# Python (system graph tooling)
+__pycache__/
+*.pyc

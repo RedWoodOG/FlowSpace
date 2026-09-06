@@ -1,214 +1,134 @@
 import 'package:flutter/material.dart';
+
 import '../../core/theme/flo_theme.dart';
-import '../shell/workspace_shell.dart';
+import '../shell/app_shell.dart';
 
 class SetupCompleteScreen extends StatelessWidget {
-  final String teamName;
-  final String userName;
-
   const SetupCompleteScreen({
     super.key,
     required this.teamName,
     required this.userName,
   });
 
+  final String teamName;
+  final String userName;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF090D13),
       body: Center(
         child: SingleChildScrollView(
+          padding: const EdgeInsets.all(28),
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 600),
-            padding: const EdgeInsets.all(40),
+            constraints: const BoxConstraints(maxWidth: 520),
+            padding: const EdgeInsets.all(38),
+            decoration: BoxDecoration(
+              color: const Color(0xFF111923),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFF344151)),
+            ),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-              const Icon(
-                Icons.check_circle,
-                size: 80,
-                color: Color(0xFF10B981),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                '🎉 You\'re All Set!',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
+                const Icon(
+                  Icons.check_circle_outline,
+                  size: 58,
+                  color: Color(0xFF65E6B9),
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Welcome to FLŌ, $userName!',
-                style: const TextStyle(
-                  fontSize: 18,
-                  color: Colors.grey,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 48),
-              
-              _SetupItem(
-                icon: Icons.groups,
-                title: 'Team Created',
-                subtitle: teamName,
-              ),
-              const SizedBox(height: 16),
-              const _SetupItem(
-                icon: Icons.tag,
-                title: 'Default Channels',
-                subtitle: '#general, #random',
-              ),
-              const SizedBox(height: 16),
-              const _SetupItem(
-                icon: Icons.folder,
-                title: 'Vault Space',
-                subtitle: 'Ready for file sharing',
-              ),
-              
-              const SizedBox(height: 48),
-              
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: FloTheme.floPrimary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(FloTheme.radiusLg),
-                  border: Border.all(color: FloTheme.floPrimary.withOpacity(0.3)),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.lightbulb_outline, color: FloTheme.floPrimary, size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Quick Tips',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: FloTheme.floPrimary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    _TipItem('Chat with your team in real-time'),
-                    _TipItem('Share files securely in the Vault'),
-                    _TipItem('Start video meetings anytime'),
-                    _TipItem('Invite team members to collaborate'),
-                  ],
-                ),
-              ),
-              
-              const SizedBox(height: 48),
-              
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (context) => const WorkspaceShell(),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: FloTheme.floPrimary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(FloTheme.radiusMd),
+                const SizedBox(height: 20),
+                const Text(
+                  'Local account ready',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xFFF8FAFC),
+                    fontSize: 27,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                child: const Text(
-                  'Enter FLŌ',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      ),
-    );
-  }
-}
-
-class _SetupItem extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-
-  const _SetupItem({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: FloTheme.floPrimary.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(FloTheme.radiusMd),
-            ),
-            child: Icon(icon, color: FloTheme.floPrimary, size: 24),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+                const SizedBox(height: 9),
                 Text(
-                  title,
+                  '$userName can now open the proof-first shell.',
+                  textAlign: TextAlign.center,
                   style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
+                    color: Color(0xFFB7C3D2),
                     fontSize: 14,
-                    color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 28),
+                _SavedFact(label: 'Local workspace', value: teamName),
+                const SizedBox(height: 10),
+                const _SavedFact(
+                  label: 'Shipping surface',
+                  value: 'System Node Graph',
+                ),
+                const SizedBox(height: 28),
+                FilledButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const AppShell()),
+                      (_) => false,
+                    );
+                  },
+                  icon: const Icon(Icons.account_tree),
+                  label: const Text('Open System Graph'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF65E6B9),
+                    foregroundColor: const Color(0xFF07110E),
+                    minimumSize: const Size.fromHeight(48),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(FloTheme.radiusMd),
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          const Icon(Icons.check, color: Color(0xFF10B981), size: 20),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _TipItem extends StatelessWidget {
-  final String text;
+class _SavedFact extends StatelessWidget {
+  const _SavedFact({required this.label, required this.value});
 
-  const _TipItem(this.text);
+  final String label;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 8),
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0C121B),
+        borderRadius: BorderRadius.circular(9),
+        border: Border.all(color: const Color(0xFF344151)),
+      ),
       child: Row(
         children: [
-          Icon(Icons.arrow_forward, size: 16, color: FloTheme.floPrimary),
-          const SizedBox(width: 8),
+          const Icon(Icons.check, color: Color(0xFF65E6B9), size: 18),
+          const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(fontSize: 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Color(0xFF93A3B5),
+                    fontSize: 11,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: Color(0xFFF1F5F9),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
